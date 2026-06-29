@@ -19,8 +19,8 @@
       </div>
       <div id="userBox" class="user hidden">
         <img id="userAvatar" alt="" />
-        <button id="signOutBtn" class="icon-btn" title="Sign out" aria-label="Sign out">
-          <span class="ic-power"></span>
+        <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
     </header>
@@ -112,6 +112,24 @@
         </div>
       </section>
     </main>
+
+    <!-- Settings -->
+    <div id="settings" class="paywall hidden">
+      <div class="paywall-card">
+        <button id="settingsClose" class="paywall-x" aria-label="Close">×</button>
+        <div class="set-head">
+          <img id="setAvatar" alt="" />
+          <div class="set-id">
+            <div id="setName" class="set-name"></div>
+            <div id="setEmail" class="muted small"></div>
+          </div>
+        </div>
+        <div class="set-row"><span class="muted">Plan</span><span id="setPlan" class="plan-tag"></span></div>
+        <button id="setManage" class="primary big"></button>
+        <button id="signOutBtn" class="ghost">Sign out</button>
+        <p id="setStatus" class="status"></p>
+      </div>
+    </div>
 
     <!-- Paywall -->
     <div id="paywall" class="paywall hidden">

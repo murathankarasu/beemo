@@ -282,6 +282,17 @@ input:focus, textarea:focus {
 }
 .ghost:hover { color: var(--text); }
 
+/* ---- settings ---- */
+.set-head { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; text-align: left; }
+.set-head img { width: 46px; height: 46px; border-radius: 50%; background: var(--panel-2); flex: none; object-fit: cover; }
+.set-name { font-weight: 600; font-size: 15px; }
+.set-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 16px;
+}
+.plan-tag { font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 6px; background: var(--panel-2); color: var(--muted); }
+.plan-tag.pro { background: var(--honey); color: var(--on-honey); }
+
 /* ---- status text ---- */
 .status { font-size: 12.5px; margin: 9px 0 0; min-height: 16px; }
 .status.ok { color: var(--ok); }

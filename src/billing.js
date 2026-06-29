@@ -6,7 +6,15 @@
 //   customers/{uid}/checkout_sessions/{id}  ← we create; extension fills `url`
 //   customers/{uid}/subscriptions/{id}      ← extension writes; status === active
 import { collection, query, where, onSnapshot, addDoc } from "firebase/firestore";
-import { db } from "./firebase.js";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "./firebase.js";
+
+// Open the Stripe customer portal (manage / cancel subscription, update card).
+export async function openCustomerPortal(returnUrl) {
+  const fn = httpsCallable(functions, "ext-firestore-stripe-payments-createPortalLink");
+  const { data } = await fn({ returnUrl });
+  return data.url;
+}
 
 // Pro = has an active (or trialing) subscription.
 export function watchPro(uid, cb) {

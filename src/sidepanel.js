@@ -16,12 +16,13 @@ import {
   incrementSendUsage,
   sendsUsedToday,
 } from "./db.js";
-import { watchPro, startCheckout } from "./billing.js";
+import { watchPro, startCheckout, openCustomerPortal } from "./billing.js";
 import {
   STRIPE_PRICE_ID,
   FREE_DAILY_SENDS,
   CHECKOUT_SUCCESS_URL,
   CHECKOUT_CANCEL_URL,
+  LANDING_URL,
 } from "./config.js";
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
@@ -69,7 +70,50 @@ $("signInBtn").addEventListener("click", async () => {
     setStatus($("sendStatus"), "Sign-in failed: " + e.message, "err");
   }
 });
-$("signOutBtn").addEventListener("click", () => signOut());
+$("signOutBtn").addEventListener("click", () => {
+  closeSettings();
+  signOut();
+});
+
+// ---------------- Settings ----------------
+$("settingsBtn").addEventListener("click", openSettings);
+$("settingsClose").addEventListener("click", closeSettings);
+function openSettings() {
+  const u = state.user;
+  if (!u) return;
+  $("setAvatar").src = u.photoURL || "";
+  $("setName").textContent = u.displayName || "";
+  $("setEmail").textContent = u.email || "";
+  const pro = isPro();
+  const tag = $("setPlan");
+  tag.textContent = pro ? "PRO" : "Free";
+  tag.classList.toggle("pro", pro);
+  $("setManage").textContent = pro ? "Manage subscription" : "Upgrade to Pro";
+  setStatus($("setStatus"), "", "");
+  $("settings").classList.remove("hidden");
+}
+function closeSettings() {
+  $("settings").classList.add("hidden");
+}
+$("setManage").addEventListener("click", async () => {
+  if (!isPro()) {
+    closeSettings();
+    openPaywall();
+    return;
+  }
+  const btn = $("setManage");
+  btn.disabled = true;
+  setStatus($("setStatus"), "Opening billing portal…", "");
+  try {
+    const url = await openCustomerPortal(LANDING_URL);
+    chrome.tabs.create({ url });
+    setStatus($("setStatus"), "Manage your plan in the new tab.", "ok");
+  } catch (e) {
+    setStatus($("setStatus"), "Error: " + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 $("pickerSearch").addEventListener("input", (e) => {
   state.pickerQuery = e.target.value;
