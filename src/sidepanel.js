@@ -609,28 +609,12 @@ function showInvite(code, email) {
   out.classList.remove("hidden");
   out.innerHTML = `
     <p class="muted small">${escapeHtml(email)} isn't on Beemo yet. Send them this link — once they install &amp; sign in, you're connected automatically.</p>
-    <div class="invite-link"><span class="invite-url">${escapeHtml(link)}</span><button id="copyInvite">Copy</button></div>
-    <p class="muted small">Or have them enter code <b>${escapeHtml(code)}</b> below.</p>`;
+    <div class="invite-link"><span class="invite-url">${escapeHtml(link)}</span><button id="copyInvite">Copy</button></div>`;
   out.querySelector("#copyInvite").addEventListener("click", (e) => {
     copy(link);
     e.target.textContent = "Copied ✓";
   });
 }
-
-// Join via a code someone shared.
-$("redeemBtn").addEventListener("click", async () => {
-  const code = $("redeemCode").value.trim();
-  const status = $("redeemStatus");
-  if (!code) return;
-  setStatus(status, "Connecting…", "");
-  try {
-    const inviter = await redeemInvite(state.user, code);
-    setStatus(status, `✓ Connected with ${inviter.displayName}`, "ok");
-    $("redeemCode").value = "";
-  } catch (e) {
-    setStatus(status, "Error: " + e.message, "err");
-  }
-});
 
 // Auto-redeem an invite captured from the landing page (deferred deep link).
 async function checkPendingInvite() {
@@ -639,8 +623,8 @@ async function checkPendingInvite() {
   await chrome.storage.local.remove(PENDING_INVITE_KEY);
   try {
     const inviter = await redeemInvite(state.user, code);
-    setStatus($("redeemStatus"), `✓ Connected with ${inviter.displayName}`, "ok");
     document.querySelector('.tab[data-tab="friends"]').click();
+    setStatus($("addStatus"), `✓ Connected with ${inviter.displayName}`, "ok");
   } catch {}
 }
 
