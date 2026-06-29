@@ -1,0 +1,143 @@
+// Firestore veri katmanı.
+//
+// Model:
+//   users/{uid}                          profil + publicKey
+//   users/{uid}/requests/{fromUid}       gelen arkadaşlık istekleri
+//   users/{uid}/friends/{friendUid}      kabul edilmiş arkadaşlar (publicKey kopyası ile)
+//   users/{uid}/inbox/{msgId}            gelen gönderiler (sekme/text/parola)
+import {
+  doc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  limit,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "./firebase.js";
+
+function handleFromEmail(email) {
+  const base = (email || "user").split("@")[0].replace(/[^a-z0-9._-]/gi, "").toLowerCase();
+  return base.slice(0, 20);
+}
+
+// Giriş sonrası profili yaz/güncelle.
+export async function ensureUserProfile(user) {
+  const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
+  const data = {
+    uid: user.uid,
+    displayName: user.displayName || "İsimsiz",
+    email: (user.email || "").toLowerCase(),
+    photoURL: user.photoURL || "",
+    updatedAt: serverTimestamp(),
+  };
+  if (!snap.exists()) {
+    data.handle = handleFromEmail(user.email);
+    data.createdAt = serverTimestamp();
+  }
+  await setDoc(ref, data, { merge: true });
+}
+
+export async function getProfile(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+// E-posta ile kullanıcı bul (arkadaş eklemek için).
+export async function findUserByEmail(email) {
+  const q = query(
+    collection(db, "users"),
+    where("email", "==", email.trim().toLowerCase()),
+    limit(1)
+  );
+  const res = await getDocs(q);
+  return res.empty ? null : res.docs[0].data();
+}
+
+// İstek gönder: hedefin requests koleksiyonuna kendi bilgini yaz.
+export async function sendFriendRequest(me, targetUid) {
+  if (targetUid === me.uid) throw new Error("Kendine istek gönderemezsin");
+  const ref = doc(db, "users", targetUid, "requests", me.uid);
+  await setDoc(ref, {
+    fromUid: me.uid,
+    fromName: me.displayName || "İsimsiz",
+    fromPhoto: me.photoURL || "",
+    fromEmail: (me.email || "").toLowerCase(),
+    createdAt: serverTimestamp(),
+  });
+}
+
+export function watchRequests(uid, cb) {
+  const q = query(collection(db, "users", uid, "requests"), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => cb(snap.docs.map((d) => d.data())));
+}
+
+// İsteği kabul et: her iki tarafı da birbirinin friends listesine ekle.
+export async function acceptRequest(me, fromUid) {
+  const theirProfile = await getProfile(fromUid);
+  if (!theirProfile) throw new Error("Kullanıcı bulunamadı");
+
+  // Onları benim listeme ekle
+  await setDoc(doc(db, "users", me.uid, "friends", fromUid), {
+    uid: theirProfile.uid,
+    displayName: theirProfile.displayName,
+    photoURL: theirProfile.photoURL || "",
+    handle: theirProfile.handle || "",
+    addedAt: serverTimestamp(),
+  });
+  // Beni onların listesine ekle (kurallar: friendId == auth.uid ise izinli)
+  await setDoc(doc(db, "users", fromUid, "friends", me.uid), {
+    uid: me.uid,
+    displayName: me.displayName || "İsimsiz",
+    photoURL: me.photoURL || "",
+    addedAt: serverTimestamp(),
+  });
+  // İsteği sil
+  await deleteDoc(doc(db, "users", me.uid, "requests", fromUid));
+}
+
+export async function declineRequest(uid, fromUid) {
+  await deleteDoc(doc(db, "users", uid, "requests", fromUid));
+}
+
+export function watchFriends(uid, cb) {
+  const q = query(collection(db, "users", uid, "friends"), orderBy("addedAt", "desc"));
+  return onSnapshot(q, (snap) => cb(snap.docs.map((d) => d.data())));
+}
+
+// Arkadaşa bir öğe yolla — onun inbox'una yaz.
+//   type: "tab" | "tabgroup" | "text" | "password"
+//   payload: tab/text/tabgroup için düz nesne; password için encryptFor() paketi
+export async function sendItem(me, friendUid, { type, payload, encrypted }) {
+  const id = crypto.randomUUID();
+  await setDoc(doc(db, "users", friendUid, "inbox", id), {
+    id,
+    from: me.uid,
+    fromName: me.displayName || "İsimsiz",
+    fromPhoto: me.photoURL || "",
+    type,
+    payload,
+    encrypted: !!encrypted,
+    read: false,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export function watchInbox(uid, cb) {
+  const q = query(collection(db, "users", uid, "inbox"), orderBy("createdAt", "desc"), limit(50));
+  return onSnapshot(q, (snap) => cb(snap.docs.map((d) => d.data())));
+}
+
+export async function markRead(uid, msgId) {
+  await setDoc(doc(db, "users", uid, "inbox", msgId), { read: true }, { merge: true });
+}
+
+export async function deleteInboxItem(uid, msgId) {
+  await deleteDoc(doc(db, "users", uid, "inbox", msgId));
+}

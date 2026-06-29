@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="sidepanel.css" />
+    <title>Beemo</title>
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><span class="dot"></span> Beemo</div>
+      <div id="userBox" class="user hidden">
+        <img id="userAvatar" alt="" />
+        <button id="signOutBtn" class="icon-btn" title="Sign out">⏻</button>
+      </div>
+    </header>
+
+    <!-- Signed out -->
+    <section id="signedOut" class="center">
+      <h2 class="signed-out-title">Share with friends, Chrome to Chrome</h2>
+      <p class="muted">
+        Send the tab you're on, a tab group, selected text, or a password straight to a friend's
+        Chrome — in one shortcut. No more copy-pasting into WhatsApp or Discord.
+      </p>
+      <button id="signInBtn" class="gsi-btn">
+        <svg class="gsi-logo" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span>Sign in with Google</span>
+      </button>
+      <p class="muted small">We only use your Google account to identify you to your friends.</p>
+    </section>
+
+    <!-- Signed in -->
+    <main id="signedIn" class="hidden">
+      <nav class="tabs">
+        <button class="tab active" data-tab="send">Send</button>
+        <button class="tab" data-tab="friends">Friends</button>
+        <button class="tab" data-tab="inbox">Inbox <span id="inboxBadge" class="badge hidden">0</span></button>
+      </nav>
+
+      <!-- SEND -->
+      <section id="tab-send" class="panel">
+        <div class="field">
+          <label>What do you want to send?</label>
+          <div class="chips" id="typeChips">
+            <button class="chip active" data-type="tab">🔗 This tab</button>
+            <button class="chip" data-type="tabgroup">🗂️ Tab group</button>
+            <button class="chip" data-type="text">📝 Text</button>
+          </div>
+          <p class="muted small hint" id="typeHint"></p>
+        </div>
+
+        <div id="composeBody" class="field"></div>
+
+        <div class="field">
+          <label>Send to</label>
+          <div id="friendPicker" class="friend-picker">
+            <p class="muted small" id="noFriendsHint">Add a friend first, in the Friends tab →</p>
+          </div>
+        </div>
+
+        <button id="sendBtn" class="primary big" disabled>Send</button>
+        <p id="sendStatus" class="status"></p>
+      </section>
+
+      <!-- FRIENDS -->
+      <section id="tab-friends" class="panel hidden">
+        <div class="field">
+          <label>Add a friend by email</label>
+          <p class="muted small hint">Enter the Google email your friend signed in with. They'll get a request to accept.</p>
+          <div class="row">
+            <input id="addEmail" type="email" placeholder="friend@gmail.com" />
+            <button id="addBtn" class="primary">Add</button>
+          </div>
+          <p id="addStatus" class="status"></p>
+        </div>
+
+        <div id="requestsWrap" class="field hidden">
+          <label>Friend requests</label>
+          <div id="requestsList"></div>
+        </div>
+
+        <div class="field">
+          <label>Your friends</label>
+          <div id="friendsList" class="list"><p class="muted small">No friends yet.</p></div>
+        </div>
+      </section>
+
+      <!-- INBOX -->
+      <section id="tab-inbox" class="panel hidden">
+        <div id="inboxList" class="list"><p class="muted small">Your inbox is empty. Items friends send you show up here instantly.</p></div>
+      </section>
+    </main>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

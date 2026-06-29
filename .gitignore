@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+
+# GİZLİ — Firebase admin servis hesabı anahtarları. ASLA commit'leme / eklentiye koyma.
+*firebase-adminsdk*.json
+*service-account*.json
+serviceAccountKey.json
+
+# GİZLİ — paketlenmiş eklenti imza anahtarı + paket. ASLA commit'leme.
+*.pem
+*.crx

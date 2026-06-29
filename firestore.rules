@@ -1,0 +1,45 @@
+rules_version = '2';
+// Beemo — güvenlik kuralları.
+// Mantık: herkes profilleri okuyabilir (arkadaş eklemek için), ama
+// - kendi profilini yazabilir
+// - başkasının requests/friends/inbox koleksiyonuna SADECE kendini temsil eden doc yazabilir
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isMe(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      // Profilleri giriş yapan herkes okuyabilir (arama + public key için)
+      allow read: if signedIn();
+      // Profilini yalnızca sahibi yazar
+      allow write: if isMe(uid);
+
+      // Gelen arkadaşlık istekleri
+      match /requests/{fromUid} {
+        allow read, delete: if isMe(uid);              // sahibi yönetir
+        allow create: if isMe(fromUid)                 // sadece kendini gönderebilirsin
+                      && request.resource.data.fromUid == request.auth.uid;
+      }
+
+      // Arkadaş listesi
+      match /friends/{friendUid} {
+        allow read, delete: if isMe(uid);              // sahibi okur/siler
+        allow create, update: if isMe(uid)             // kendi listene ekleyebilirsin
+                      || (isMe(friendUid)              // ya da karşıya kendini ekleyebilirsin
+                          && request.resource.data.uid == request.auth.uid);
+      }
+
+      // Gelen kutusu
+      match /inbox/{msgId} {
+        allow read, update, delete: if isMe(uid);      // sahibi okur/işaretler/siler
+        allow create: if signedIn()                    // herkes mesaj yollayabilir
+                      && request.resource.data.from == request.auth.uid;
+      }
+    }
+  }
+}

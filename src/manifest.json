@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Beemo — Send tabs, tab groups & text to a friend",
+  "version": "0.1.0",
+  "description": "Send any tab, tab group, or note straight to a friend's Chrome in one shortcut — no copy-pasting into other apps.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "identity",
+    "sidePanel",
+    "contextMenus",
+    "scripting",
+    "notifications"
+  ],
+  "host_permissions": [],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Beemo — send to a friend"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "commands": {
+    "open-beemo": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open Beemo (ready to send the current tab)"
+    }
+  },
+  "oauth2": {
+    "client_id": "874064701796-q6q15vv9cv2p6lobafr2105ga19iuf3h.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
