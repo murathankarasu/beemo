@@ -48,5 +48,26 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.from == request.auth.uid;
       allow update: if signedIn() && request.resource.data.redeemedBy == request.auth.uid;
     }
+
+    // Stripe eklentisi (firestore-stripe-payments). Abonelik durumunu Admin SDK
+    // yazar → kullanıcı sadece OKUR, Pro'yu sahteleyemez.
+    match /customers/{uid} {
+      allow read: if isMe(uid);
+      match /checkout_sessions/{id} {
+        allow read, write: if isMe(uid);
+      }
+      match /subscriptions/{id} {
+        allow read: if isMe(uid);
+      }
+      match /payments/{id} {
+        allow read: if isMe(uid);
+      }
+    }
+    match /products/{id} {
+      allow read: if true;
+      match /prices/{pid} {
+        allow read: if true;
+      }
+    }
   }
 }

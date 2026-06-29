@@ -69,6 +69,7 @@
       </svg>
 
       <div class="detected" id="detected">✓ Beemo is installed — open the side panel (top-right) to connect.</div>
+      <div class="detected" id="checkout">✓ You're Pro now — head back to Beemo and keep sending.</div>
 
       <h1>You're invited to Beemo</h1>
       <p><span class="who" id="who">A friend</span> wants to share tabs &amp; notes with you, Chrome to Chrome.</p>
@@ -87,7 +88,11 @@
     </main>
 
     <script>
-      const code = new URLSearchParams(location.search).get("invite");
+      const params = new URLSearchParams(location.search);
+      if (params.get("checkout") === "success") {
+        document.getElementById("checkout").classList.add("show");
+      }
+      const code = params.get("invite");
       if (code) {
         const el = document.getElementById("code");
         el.textContent = code.toUpperCase();

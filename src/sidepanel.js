@@ -12,7 +12,17 @@ import {
   deleteInboxItem,
   createInvite,
   redeemInvite,
+  watchMe,
+  incrementSendUsage,
+  sendsUsedToday,
 } from "./db.js";
+import { watchPro, startCheckout } from "./billing.js";
+import {
+  STRIPE_PRICE_ID,
+  FREE_DAILY_SENDS,
+  CHECKOUT_SUCCESS_URL,
+  CHECKOUT_CANCEL_URL,
+} from "./config.js";
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
 const PENDING_INVITE_KEY = "beemo_pending_invite";
@@ -36,8 +46,17 @@ const state = {
   tabGroupTabs: null, // editable list for the "Tab group" composer
   pickerQuery: "",
   friendQuery: "",
+  me: null, // own profile doc (plan + usage)
+  subPro: false, // active Stripe subscription
   unsubs: [],
 };
+
+function isPro() {
+  return state.subPro || state.me?.plan === "pro";
+}
+function sendsLeft() {
+  return Math.max(0, FREE_DAILY_SENDS - sendsUsedToday(state.me));
+}
 
 const FRIEND_RENDER_CAP = 100; // keep the DOM small even with thousands of friends
 
@@ -103,8 +122,31 @@ function startWatchers() {
       renderInbox();
       const unread = inbox.filter((m) => !m.read).length;
       if (unread > prevUnread) notifyNew(inbox[0]);
+    }),
+    watchMe(uid, (me) => {
+      state.me = me;
+      renderUsage();
+    }),
+    watchPro(uid, (pro) => {
+      state.subPro = pro;
+      renderUsage();
     })
   );
+}
+
+function renderUsage() {
+  const line = $("usageLine");
+  if (!line) return;
+  if (isPro()) {
+    line.innerHTML = `<span class="pro-badge">PRO</span> Unlimited sending`;
+    return;
+  }
+  const left = sendsLeft();
+  line.innerHTML = `${left}/${FREE_DAILY_SENDS} free sends left today · <a href="#" id="goProLink">Go Pro</a>`;
+  line.querySelector("#goProLink").addEventListener("click", (e) => {
+    e.preventDefault();
+    openPaywall();
+  });
 }
 
 // ---------------- Tabs ----------------
@@ -446,17 +488,56 @@ $("sendBtn").addEventListener("click", async () => {
   const status = $("sendStatus");
   const friend = state.friends.find((f) => f.uid === state.selectedFriendUid);
   if (!friend) return;
+  // Paywall: free plan can only send a few times a day. Receiving stays free.
+  if (!isPro() && sendsLeft() <= 0) {
+    openPaywall();
+    return;
+  }
   btn.disabled = true;
   setStatus(status, "Sending…", "");
   try {
     const item = await buildItem(friend);
     await sendItem(state.user, friend.uid, item);
+    if (!isPro()) await incrementSendUsage(state.user.uid, state.me);
     setStatus(status, `✓ Sent to ${friend.displayName}`, "ok");
     await clearPending();
     if (state.composeType === "text") $("textInput").value = "";
     if (state.composeType === "tabgroup") state.tabGroupTabs = null;
   } catch (e) {
     setStatus(status, "Error: " + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---------------- Paywall ----------------
+function openPaywall() {
+  $("paywall").classList.remove("hidden");
+}
+function closePaywall() {
+  $("paywall").classList.add("hidden");
+}
+$("paywallClose").addEventListener("click", closePaywall);
+$("paywallLater").addEventListener("click", closePaywall);
+$("paywallUpgrade").addEventListener("click", async () => {
+  const btn = $("paywallUpgrade");
+  if (!STRIPE_PRICE_ID || STRIPE_PRICE_ID.includes("REPLACE_ME")) {
+    setStatus($("paywallStatus"), "Billing isn't set up yet — coming soon.", "err");
+    return;
+  }
+  btn.disabled = true;
+  setStatus($("paywallStatus"), "Opening secure checkout…", "");
+  try {
+    const url = await startCheckout(
+      state.user.uid,
+      STRIPE_PRICE_ID,
+      CHECKOUT_SUCCESS_URL,
+      CHECKOUT_CANCEL_URL
+    );
+    chrome.tabs.create({ url });
+    setStatus($("paywallStatus"), "Continue in the new tab to finish.", "ok");
+  } catch (e) {
+    setStatus($("paywallStatus"), "Error: " + e.message, "err");
   } finally {
     btn.disabled = false;
   }

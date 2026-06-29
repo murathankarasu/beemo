@@ -196,6 +196,25 @@ export async function markRead(uid, msgId) {
   await setDoc(doc(db, "users", uid, "inbox", msgId), { read: true }, { merge: true });
 }
 
+// ---- Usage (daily send quota for the free plan) ----
+export function watchMe(uid, cb) {
+  return onSnapshot(doc(db, "users", uid), (snap) => cb(snap.exists() ? snap.data() : null));
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function sendsUsedToday(me) {
+  return me?.usageDate === todayKey() ? me?.usageSends || 0 : 0;
+}
+
+export async function incrementSendUsage(uid, me) {
+  const today = todayKey();
+  const sends = me?.usageDate === today ? (me?.usageSends || 0) + 1 : 1;
+  await setDoc(doc(db, "users", uid), { usageDate: today, usageSends: sends }, { merge: true });
+}
+
 export async function deleteInboxItem(uid, msgId) {
   await deleteDoc(doc(db, "users", uid, "inbox", msgId));
 }

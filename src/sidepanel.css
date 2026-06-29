@@ -239,6 +239,49 @@ input:focus, textarea:focus {
 .checkrow input { width: auto; margin-top: 2px; accent-color: var(--honey); }
 .checkrow small { display: block; }
 
+/* ---- usage line + pro badge ---- */
+.usage { font-size: 12px; color: var(--muted); margin: 9px 0 0; text-align: center; }
+.usage a { color: var(--honey); font-weight: 600; text-decoration: none; }
+.usage a:hover { text-decoration: underline; }
+.pro-badge {
+  background: var(--honey); color: var(--on-honey); font-weight: 700; font-size: 10px;
+  padding: 1px 6px; border-radius: 5px; letter-spacing: 0.5px;
+}
+
+/* ---- paywall ---- */
+.paywall {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+  padding: 18px; background: rgba(10, 8, 3, 0.72); animation: fade 0.18s ease both;
+}
+.paywall-card {
+  position: relative; width: 100%; max-width: 320px; background: var(--panel);
+  border: 1px solid var(--border-strong); border-radius: 18px; padding: 24px 20px; text-align: center;
+  animation: cardin 0.24s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.paywall-x {
+  position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--faint);
+  font-size: 22px; line-height: 1; cursor: pointer;
+}
+.paywall-x:hover { color: var(--text); }
+.paywall-mark img { width: 60px; height: 60px; border-radius: 16px; }
+.paywall-card h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; margin: 12px 0 6px; }
+.paywall-card .muted { font-size: 13px; line-height: 1.5; }
+.perks { list-style: none; padding: 0; margin: 16px 0; text-align: left; display: flex; flex-direction: column; gap: 8px; }
+.perks li { font-size: 13.5px; padding-left: 26px; position: relative; }
+.perks li::before {
+  content: "✓"; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--honey-soft); color: var(--honey); font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+}
+.price { margin: 6px 0 14px; }
+.price b { font-size: 28px; font-weight: 700; }
+.price span { color: var(--muted); font-size: 14px; margin-left: 4px; }
+.ghost {
+  width: 100%; background: none; border: none; color: var(--muted); cursor: pointer;
+  font: 500 13px var(--font); padding: 10px; margin-top: 4px;
+}
+.ghost:hover { color: var(--text); }
+
 /* ---- status text ---- */
 .status { font-size: 12.5px; margin: 9px 0 0; min-height: 16px; }
 .status.ok { color: var(--ok); }
