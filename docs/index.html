@@ -4,36 +4,49 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Beemo — you've been invited</title>
-    <meta name="description" content="Send tabs, tab groups and text to a friend's Chrome in one shortcut." />
+    <meta name="description" content="Send tabs, tab groups and notes to a friend's Chrome in one shortcut." />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" />
     <style>
-      :root { --bg:#0f1116; --panel:#171a21; --border:#2a2f3a; --text:#e7e9ee; --muted:#9aa3b2; --accent:#facc15; --on:#1a1a00; }
+      :root {
+        --bg:#16130c; --panel:#1f1a10; --panel-2:#2a2315; --border:#3a3120;
+        --text:#f6edd7; --muted:#b6a884; --faint:#897c5e;
+        --honey:#ffb300; --honey-shadow:#7a5403; --honey-soft:#3d3010; --on:#1a1206;
+        --font:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      }
       * { box-sizing:border-box; }
-      body { margin:0; min-height:100vh; background:var(--bg); color:var(--text);
-        font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-        display:flex; align-items:center; justify-content:center; padding:24px; }
-      .card { width:100%; max-width:460px; background:var(--panel); border:1px solid var(--border);
-        border-radius:18px; padding:32px; text-align:center; }
-      .logo { width:84px; height:84px; margin:0 auto 18px; display:block; }
-      h1 { font-size:24px; margin:0 0 6px; }
-      p { color:var(--muted); margin:0 0 18px; }
+      body {
+        margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--font);
+        display:flex; align-items:center; justify-content:center; padding:24px;
+        background-image:radial-gradient(120% 60% at 50% -10%, rgba(255,179,0,0.08), transparent 60%);
+      }
+      .card { width:100%; max-width:440px; background:var(--panel); border:1px solid var(--border);
+        border-radius:22px; padding:34px; text-align:center; }
+      .logo { width:88px; height:88px; margin:0 auto 20px; display:block; border-radius:22px;
+        animation:pop .5s cubic-bezier(.2,.9,.3,1.3) both; }
+      h1 { font-size:27px; font-weight:700; letter-spacing:-.8px; margin:0 0 8px; }
+      p { color:var(--muted); margin:0 0 18px; line-height:1.55; }
       .who { color:var(--text); font-weight:600; }
-      .code { display:inline-block; font:600 20px/1 ui-monospace,monospace; letter-spacing:3px;
-        background:#1f232c; color:var(--accent); padding:12px 18px; border-radius:10px; margin:6px 0 20px; }
-      .btn { display:inline-block; background:var(--accent); color:var(--on); text-decoration:none;
-        font-weight:700; padding:14px 22px; border-radius:10px; width:100%; }
-      .steps { text-align:left; margin:22px 0 0; padding:0; list-style:none; font-size:14px; color:var(--muted); }
-      .steps li { margin:8px 0; padding-left:26px; position:relative; }
-      .steps li::before { content:""; position:absolute; left:0; top:2px; width:18px; height:18px;
-        background:var(--accent); color:var(--on); border-radius:50%; text-align:center; line-height:18px;
-        font-weight:700; font-size:11px; }
+      .code { display:inline-block; font:700 22px/1 "Space Grotesk",monospace; letter-spacing:5px;
+        background:rgba(0,0,0,.28); color:var(--honey); padding:14px 20px; border-radius:12px; margin:4px 0 22px; }
+      .btn { display:block; background:var(--honey); color:var(--on); text-decoration:none;
+        font-weight:700; font-size:16px; padding:15px 22px; border-radius:13px; box-shadow:0 4px 0 var(--honey-shadow);
+        transition:transform .08s, box-shadow .08s; }
+      .btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--honey-shadow); }
+      .steps { text-align:left; margin:24px 0 0; padding:0; list-style:none; font-size:14px; color:var(--muted); }
+      .steps li { margin:11px 0; padding-left:30px; position:relative; }
+      .steps li::before { position:absolute; left:0; top:-1px; width:21px; height:21px;
+        background:var(--honey-soft); color:var(--honey); border:1px solid var(--honey); border-radius:50%;
+        text-align:center; line-height:21px; font-weight:700; font-size:11px; }
       .steps li:nth-child(1)::before { content:"1"; }
       .steps li:nth-child(2)::before { content:"2"; }
       .steps li:nth-child(3)::before { content:"3"; }
-      .detected { display:none; background:#14331a; border:1px solid #1d9e75; color:#9fe1cb;
-        padding:12px; border-radius:10px; margin-bottom:18px; font-size:14px; }
+      .detected { display:none; background:#16331a; border:1px solid #4f9e2f; color:#bfe39f;
+        padding:12px; border-radius:12px; margin-bottom:18px; font-size:14px; }
       .detected.show { display:block; }
-      .foot { margin-top:22px; font-size:12px; }
-      .foot a { color:var(--muted); }
+      .foot { margin-top:24px; font-size:12px; }
+      .foot a { color:var(--faint); }
+      @keyframes pop { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
     </style>
   </head>
   <body>
@@ -48,8 +61,8 @@
         <ellipse cx="24" cy="66" rx="12" ry="8" fill="#e0a92a" transform="rotate(-22 24 66)"/>
         <ellipse cx="104" cy="66" rx="12" ry="8" fill="#e0a92a" transform="rotate(22 104 66)"/>
         <ellipse cx="64" cy="73" rx="40" ry="37" fill="#facc15"/>
-        <g clip-path="url(#f)"><rect x="18" y="50" width="92" height="9" fill="#1a1a1a"/><rect x="18" y="71" width="92" height="9" fill="#1a1a1a"/></g>
         <clipPath id="f"><ellipse cx="64" cy="73" rx="40" ry="37"/></clipPath>
+        <g clip-path="url(#f)"><rect x="18" y="50" width="92" height="9" fill="#1a1a1a"/><rect x="18" y="71" width="92" height="9" fill="#1a1a1a"/></g>
         <circle cx="50" cy="65" r="5.2" fill="#1a1a1a"/><circle cx="78" cy="65" r="5.2" fill="#1a1a1a"/>
         <ellipse cx="64" cy="93" rx="24" ry="15" fill="#fff1c2"/>
         <ellipse cx="55" cy="93" rx="3.3" ry="4.4" fill="#c98a2a"/><ellipse cx="73" cy="93" rx="3.3" ry="4.4" fill="#c98a2a"/>
@@ -65,9 +78,9 @@
       <a class="btn" id="install" href="https://github.com/murathankarasu/Beemo">Add Beemo to Chrome</a>
 
       <ul class="steps">
-        <li>Install Beemo and reopen this link</li>
+        <li>Install Beemo, then reopen this link</li>
         <li>Open the side panel and sign in with Google</li>
-        <li>You'll be connected automatically — or paste the code above</li>
+        <li>You're connected automatically — or paste the code above</li>
       </ul>
 
       <p class="foot"><a href="https://github.com/murathankarasu/Beemo">What is Beemo?</a></p>
@@ -80,7 +93,6 @@
         el.textContent = code.toUpperCase();
         el.style.display = "inline-block";
       }
-      // The content script sets this attribute if the extension is installed.
       const reflect = () => {
         if (document.documentElement.getAttribute("data-beemo-installed") === "1") {
           document.getElementById("detected").classList.add("show");

@@ -46,6 +46,9 @@
     "client_id": "874064701796-q6q15vv9cv2p6lobafr2105ga19iuf3h.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
+  },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

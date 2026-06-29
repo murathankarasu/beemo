@@ -18,7 +18,12 @@ import {
   onSnapshot,
   serverTimestamp,
   orderBy,
+  Timestamp,
 } from "firebase/firestore";
+
+// Inbox items auto-expire so storage stays cheap (enable a Firestore TTL policy
+// on the `expireAt` field of the inbox collection group).
+const INBOX_TTL_DAYS = 30;
 import { db } from "./firebase.js";
 
 function handleFromEmail(email) {
@@ -178,6 +183,7 @@ export async function sendItem(me, friendUid, { type, payload, encrypted }) {
     encrypted: !!encrypted,
     read: false,
     createdAt: serverTimestamp(),
+    expireAt: Timestamp.fromMillis(Date.now() + INBOX_TTL_DAYS * 24 * 60 * 60 * 1000),
   });
 }
 

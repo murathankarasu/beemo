@@ -34,8 +34,12 @@ const state = {
   composeType: "tab",
   pendingTab: null, // tab coming from right-click / shortcut
   tabGroupTabs: null, // editable list for the "Tab group" composer
+  pickerQuery: "",
+  friendQuery: "",
   unsubs: [],
 };
+
+const FRIEND_RENDER_CAP = 100; // keep the DOM small even with thousands of friends
 
 // ---------------- Auth UI ----------------
 $("signInBtn").addEventListener("click", async () => {
@@ -46,6 +50,15 @@ $("signInBtn").addEventListener("click", async () => {
   }
 });
 $("signOutBtn").addEventListener("click", () => signOut());
+
+$("pickerSearch").addEventListener("input", (e) => {
+  state.pickerQuery = e.target.value;
+  renderFriendPicker();
+});
+$("friendSearch").addEventListener("input", (e) => {
+  state.friendQuery = e.target.value;
+  renderFriends();
+});
 
 onAuth(async (user) => {
   cleanup();
@@ -160,54 +173,84 @@ async function ensureOrigin(url) {
 }
 
 // Injected into the page — reads visible field values. Passwords/hidden excluded.
+// Builds a stable CSS selector for each field so even id-less SPA inputs are caught.
 function captureFormFields() {
   const skip = new Set(["password", "hidden", "file", "submit", "button", "image", "reset"]);
+  const cssPath = (el) => {
+    if (el.id) return "#" + CSS.escape(el.id);
+    const parts = [];
+    let node = el;
+    while (node && node.nodeType === 1 && parts.length < 6) {
+      let sel = node.nodeName.toLowerCase();
+      if (node.name) {
+        parts.unshift(`${sel}[name="${CSS.escape(node.name)}"]`);
+        break;
+      }
+      const parent = node.parentElement;
+      if (parent) {
+        const sibs = Array.from(parent.children).filter((c) => c.nodeName === node.nodeName);
+        if (sibs.length > 1) sel += `:nth-of-type(${sibs.indexOf(node) + 1})`;
+      }
+      parts.unshift(sel);
+      node = parent;
+    }
+    return parts.join(" > ");
+  };
   const out = [];
   for (const el of document.querySelectorAll("input, textarea, select")) {
-    if (out.length >= 150) break;
+    if (out.length >= 200) break;
     const type = (el.type || "text").toLowerCase();
     if (skip.has(type) || el.disabled) continue;
-    if (!el.id && !el.name) continue;
+    const sel = cssPath(el);
+    if (!sel) continue;
     if (type === "checkbox" || type === "radio") {
-      out.push({ id: el.id || "", name: el.name || "", type, value: el.value, checked: el.checked });
+      out.push({ sel, type, value: el.value, checked: el.checked });
     } else {
       if (el.value == null || el.value === "") continue;
-      out.push({ id: el.id || "", name: el.name || "", type, value: String(el.value).slice(0, 2000) });
+      out.push({ sel, type, value: String(el.value).slice(0, 5000) });
     }
   }
   return out;
 }
 
-// Injected into the opened page — restores field values, retrying once for late forms.
+// Injected into the opened page — restores values. Uses the native value setter
+// so React/Vue controlled inputs register the change, and retries for late forms.
 function restoreFormFields(fields) {
-  const find = (f) => {
-    if (f.id) {
-      const e = document.getElementById(f.id);
-      if (e) return e;
-    }
-    if (f.name) {
-      const list = document.getElementsByName(f.name);
-      if (list && list.length) {
-        if (f.type === "radio") {
-          for (const e of list) if (e.value === f.value) return e;
-        }
-        return list[0];
-      }
-    }
-    return null;
+  const setVal = (el, value) => {
+    const proto =
+      el instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : el instanceof HTMLSelectElement
+        ? HTMLSelectElement.prototype
+        : HTMLInputElement.prototype;
+    const desc = Object.getOwnPropertyDescriptor(proto, "value");
+    if (desc && desc.set) desc.set.call(el, value);
+    else el.value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   };
   const apply = () => {
     for (const f of fields) {
-      const el = find(f);
+      let el = null;
+      try {
+        el = document.querySelector(f.sel);
+      } catch {}
       if (!el) continue;
-      if (f.type === "checkbox" || f.type === "radio") el.checked = !!f.checked;
-      else el.value = f.value;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
+      if (f.type === "checkbox" || f.type === "radio") {
+        el.checked = !!f.checked;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      } else {
+        setVal(el, f.value);
+      }
     }
   };
   apply();
-  setTimeout(apply, 900);
+  let tries = 0;
+  const iv = setInterval(() => {
+    apply();
+    if (++tries >= 6) clearInterval(iv);
+  }, 500);
 }
 
 async function captureCurrentForm(tab) {
@@ -346,14 +389,37 @@ async function getCurrentGroupTabs() {
   return tabs.map((t) => ({ url: t.url, title: t.title, favIconUrl: t.favIconUrl }));
 }
 
+function filterFriends(query) {
+  const q = (query || "").trim().toLowerCase();
+  if (!q) return state.friends;
+  return state.friends.filter(
+    (f) =>
+      (f.displayName || "").toLowerCase().includes(q) ||
+      (f.handle || "").toLowerCase().includes(q)
+  );
+}
+
+function moreNote(hidden) {
+  const p = document.createElement("p");
+  p.className = "muted small count-more";
+  p.textContent = `+${hidden} more — search to narrow down`;
+  return p;
+}
+
 function renderFriendPicker() {
   const picker = $("friendPicker");
+  $("pickerSearch").classList.toggle("hidden", state.friends.length <= 8);
   if (!state.friends.length) {
     picker.innerHTML = `<p class="muted small" id="noFriendsHint">Add a friend first, in the Friends tab →</p>`;
     return;
   }
+  const filtered = filterFriends(state.pickerQuery);
   picker.innerHTML = "";
-  for (const f of state.friends) {
+  if (!filtered.length) {
+    picker.innerHTML = `<p class="muted small">No friend matches that.</p>`;
+    return;
+  }
+  for (const f of filtered.slice(0, FRIEND_RENDER_CAP)) {
     const row = document.createElement("div");
     row.className = "friend-row" + (state.selectedFriendUid === f.uid ? " selected" : "");
     row.innerHTML = `${f.photoURL ? `<img src="${f.photoURL}"/>` : `<img/>`}<div class="name">${escapeHtml(
@@ -366,6 +432,7 @@ function renderFriendPicker() {
     });
     picker.appendChild(row);
   }
+  if (filtered.length > FRIEND_RENDER_CAP) picker.appendChild(moreNote(filtered.length - FRIEND_RENDER_CAP));
 }
 
 function updateSendEnabled() {
@@ -522,12 +589,18 @@ function renderRequests() {
 
 function renderFriends() {
   const list = $("friendsList");
+  $("friendSearch").classList.toggle("hidden", state.friends.length <= 8);
   if (!state.friends.length) {
     list.innerHTML = `<p class="muted small">No friends yet.</p>`;
     return;
   }
+  const filtered = filterFriends(state.friendQuery);
   list.innerHTML = "";
-  for (const f of state.friends) {
+  if (!filtered.length) {
+    list.innerHTML = `<p class="muted small">No friend matches that.</p>`;
+    return;
+  }
+  for (const f of filtered.slice(0, FRIEND_RENDER_CAP)) {
     const row = document.createElement("div");
     row.className = "friend-row";
     row.innerHTML = `${f.photoURL ? `<img src="${f.photoURL}"/>` : `<img/>`}<div class="name">${escapeHtml(
@@ -535,6 +608,7 @@ function renderFriends() {
     )}${f.handle ? `<small>@${escapeHtml(f.handle)}</small>` : ""}</div>`;
     list.appendChild(row);
   }
+  if (filtered.length > FRIEND_RENDER_CAP) list.appendChild(moreNote(filtered.length - FRIEND_RENDER_CAP));
 }
 
 // ---------------- Inbox ----------------

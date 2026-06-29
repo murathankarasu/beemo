@@ -3,24 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    />
     <link rel="stylesheet" href="sidepanel.css" />
     <title>Beemo</title>
   </head>
   <body>
     <header class="top">
-      <div class="brand"><span class="dot"></span> Beemo</div>
+      <div class="brand">
+        <img class="brand-logo" src="icons/icon48.png" alt="" />
+        <span class="wordmark">beemo</span>
+      </div>
       <div id="userBox" class="user hidden">
         <img id="userAvatar" alt="" />
-        <button id="signOutBtn" class="icon-btn" title="Sign out">⏻</button>
+        <button id="signOutBtn" class="icon-btn" title="Sign out" aria-label="Sign out">
+          <span class="ic-power"></span>
+        </button>
       </div>
     </header>
 
     <!-- Signed out -->
     <section id="signedOut" class="center">
-      <h2 class="signed-out-title">Share with friends, Chrome to Chrome</h2>
+      <div class="hero-mark"><img src="icons/icon128.png" alt="Beemo" /></div>
+      <h2 class="signed-out-title">Buzz it over.</h2>
       <p class="muted">
-        Send the tab you're on, a tab group, selected text, or a password straight to a friend's
-        Chrome — in one shortcut. No more copy-pasting into WhatsApp or Discord.
+        Send the tab you're on, a group of tabs, or a quick note straight to a friend's Chrome —
+        one shortcut, no copy-pasting into other apps.
       </p>
       <button id="signInBtn" class="gsi-btn">
         <svg class="gsi-logo" viewBox="0 0 48 48" aria-hidden="true">
@@ -31,7 +42,7 @@
         </svg>
         <span>Sign in with Google</span>
       </button>
-      <p class="muted small">We only use your Google account to identify you to your friends.</p>
+      <p class="muted micro">We only use your Google account to identify you to your friends.</p>
     </section>
 
     <!-- Signed in -->
@@ -45,25 +56,26 @@
       <!-- SEND -->
       <section id="tab-send" class="panel">
         <div class="field">
-          <label>What do you want to send?</label>
+          <label>What to send</label>
           <div class="chips" id="typeChips">
-            <button class="chip active" data-type="tab">🔗 This tab</button>
-            <button class="chip" data-type="tabgroup">🗂️ Tab group</button>
-            <button class="chip" data-type="text">📝 Text</button>
+            <button class="chip active" data-type="tab">This tab</button>
+            <button class="chip" data-type="tabgroup">Tab group</button>
+            <button class="chip" data-type="text">Text</button>
           </div>
-          <p class="muted small hint" id="typeHint"></p>
+          <p class="muted micro hint" id="typeHint"></p>
         </div>
 
         <div id="composeBody" class="field"></div>
 
         <div class="field">
           <label>Send to</label>
+          <input id="pickerSearch" class="friend-search hidden" type="text" placeholder="Search friends…" />
           <div id="friendPicker" class="friend-picker">
             <p class="muted small" id="noFriendsHint">Add a friend first, in the Friends tab →</p>
           </div>
         </div>
 
-        <button id="sendBtn" class="primary big" disabled>Send</button>
+        <button id="sendBtn" class="primary big" disabled>Send it</button>
         <p id="sendStatus" class="status"></p>
       </section>
 
@@ -71,7 +83,7 @@
       <section id="tab-friends" class="panel hidden">
         <div class="field">
           <label>Add a friend by email</label>
-          <p class="muted small hint">On Beemo? They get a request. Not yet? You'll get an invite link to share.</p>
+          <p class="muted micro hint">On Beemo? They get a request. Not yet? You'll get an invite link to share.</p>
           <div class="row">
             <input id="addEmail" type="email" placeholder="friend@gmail.com" />
             <button id="addBtn" class="primary">Add</button>
@@ -96,13 +108,16 @@
 
         <div class="field">
           <label>Your friends</label>
+          <input id="friendSearch" class="friend-search hidden" type="text" placeholder="Search friends…" />
           <div id="friendsList" class="list"><p class="muted small">No friends yet.</p></div>
         </div>
       </section>
 
       <!-- INBOX -->
       <section id="tab-inbox" class="panel hidden">
-        <div id="inboxList" class="list"><p class="muted small">Your inbox is empty. Items friends send you show up here instantly.</p></div>
+        <div id="inboxList" class="list">
+          <p class="muted small">Your inbox is empty. Items friends send you show up here instantly.</p>
+        </div>
       </section>
     </main>
 
