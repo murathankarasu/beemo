@@ -71,12 +71,22 @@
       <section id="tab-friends" class="panel hidden">
         <div class="field">
           <label>Add a friend by email</label>
-          <p class="muted small hint">Enter the Google email your friend signed in with. They'll get a request to accept.</p>
+          <p class="muted small hint">On Beemo? They get a request. Not yet? You'll get an invite link to share.</p>
           <div class="row">
             <input id="addEmail" type="email" placeholder="friend@gmail.com" />
             <button id="addBtn" class="primary">Add</button>
           </div>
           <p id="addStatus" class="status"></p>
+          <div id="inviteOut" class="invite-out hidden"></div>
+        </div>
+
+        <div class="field">
+          <label>Have an invite code?</label>
+          <div class="row">
+            <input id="redeemCode" type="text" placeholder="e.g. K7P2QXM" />
+            <button id="redeemBtn" class="primary">Join</button>
+          </div>
+          <p id="redeemStatus" class="status"></p>
         </div>
 
         <div id="requestsWrap" class="field hidden">

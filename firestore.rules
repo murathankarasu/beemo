@@ -41,5 +41,12 @@ service cloud.firestore {
                       && request.resource.data.from == request.auth.uid;
       }
     }
+
+    // Davetler: kod bir "yetenek" gibi davranır (kodu bilen kabul edebilir)
+    match /invites/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.from == request.auth.uid;
+      allow update: if signedIn() && request.resource.data.redeemedBy == request.auth.uid;
+    }
   }
 }

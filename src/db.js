@@ -78,6 +78,58 @@ export function watchRequests(uid, cb) {
   return onSnapshot(q, (snap) => cb(snap.docs.map((d) => d.data())));
 }
 
+// ---- Invites (viral loop): invite a friend who isn't on Beemo yet ----
+function makeInviteCode() {
+  const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
+  let s = "";
+  for (let i = 0; i < 7; i++) s += a[Math.floor(Math.random() * a.length)];
+  return s;
+}
+
+export async function createInvite(me, targetEmail) {
+  const code = makeInviteCode();
+  await setDoc(doc(db, "invites", code), {
+    code,
+    from: me.uid,
+    fromName: me.displayName || "İsimsiz",
+    fromPhoto: me.photoURL || "",
+    fromEmail: (me.email || "").toLowerCase(),
+    targetEmail: (targetEmail || "").toLowerCase(),
+    redeemedBy: null,
+    createdAt: serverTimestamp(),
+  });
+  return code;
+}
+
+// Redeem an invite code → become mutual friends with the inviter.
+export async function redeemInvite(me, rawCode) {
+  const code = (rawCode || "").trim().toUpperCase();
+  if (!code) throw new Error("Empty code");
+  const ref = doc(db, "invites", code);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Invite not found");
+  const inv = snap.data();
+  if (inv.from === me.uid) throw new Error("That's your own invite");
+  const inviter = await getProfile(inv.from);
+  if (!inviter) throw new Error("Inviter not found");
+
+  await setDoc(doc(db, "users", me.uid, "friends", inviter.uid), {
+    uid: inviter.uid,
+    displayName: inviter.displayName,
+    photoURL: inviter.photoURL || "",
+    handle: inviter.handle || "",
+    addedAt: serverTimestamp(),
+  });
+  await setDoc(doc(db, "users", inviter.uid, "friends", me.uid), {
+    uid: me.uid,
+    displayName: me.displayName || "İsimsiz",
+    photoURL: me.photoURL || "",
+    addedAt: serverTimestamp(),
+  });
+  await setDoc(ref, { redeemedBy: me.uid, redeemedAt: serverTimestamp() }, { merge: true });
+  return inviter;
+}
+
 // İsteği kabul et: her iki tarafı da birbirinin friends listesine ekle.
 export async function acceptRequest(me, fromUid) {
   const theirProfile = await getProfile(fromUid);

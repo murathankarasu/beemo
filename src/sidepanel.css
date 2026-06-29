@@ -145,6 +145,17 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 .grouptab:hover .gt-x { opacity: 1; }
 .grouptab .gt-x:hover { background: var(--danger); color: #fff; }
 
+.invite-out { margin-top: 10px; padding: 10px; border: 1px solid var(--accent); border-radius: 8px; background: var(--panel); }
+.invite-link { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
+.invite-url {
+  flex: 1; font-size: 12px; color: var(--accent-2); background: var(--panel-2);
+  padding: 6px 8px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.invite-link button {
+  flex: none; background: var(--accent); color: var(--on-accent); border: none;
+  border-radius: 6px; padding: 6px 10px; font-weight: 600; cursor: pointer; font-size: 12px;
+}
+
 .checkrow { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 13px; cursor: pointer; }
 .checkrow input { width: auto; margin-top: 2px; }
 .checkrow small { display: block; }

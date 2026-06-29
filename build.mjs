@@ -25,7 +25,7 @@ for (const f of ["manifest.json", "sidepanel.html", "sidepanel.css"]) {
 
 // ---- Bundle JS ----
 const buildOpts = {
-  entryPoints: ["src/background.js", "src/sidepanel.js"],
+  entryPoints: ["src/background.js", "src/sidepanel.js", "src/invite-capture.js"],
   bundle: true,
   format: "esm",
   target: "chrome116",

@@ -10,9 +10,13 @@ import {
   watchInbox,
   markRead,
   deleteInboxItem,
+  createInvite,
+  redeemInvite,
 } from "./db.js";
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
+const PENDING_INVITE_KEY = "beemo_pending_invite";
+const INVITE_BASE = "https://murathankarasu.github.io/Beemo/?invite=";
 
 // Short, clear explanation shown under the type chips.
 const TYPE_HINTS = {
@@ -53,6 +57,7 @@ onAuth(async (user) => {
     $("userAvatar").src = user.photoURL || "";
     startWatchers();
     await loadPending();
+    await checkPendingInvite();
   } else {
     $("signedOut").classList.remove("hidden");
     $("signedIn").classList.add("hidden");
@@ -421,12 +426,18 @@ async function buildItem(friend) {
 $("addBtn").addEventListener("click", async () => {
   const email = $("addEmail").value.trim();
   const status = $("addStatus");
+  $("inviteOut").classList.add("hidden");
   if (!email) return;
   setStatus(status, "Searching…", "");
   try {
     const target = await findUserByEmail(email);
-    if (!target)
-      return setStatus(status, "No one with that email yet — they may not have installed Beemo.", "err");
+    if (!target) {
+      // Not on Beemo yet → create an invite link to share (this is the viral loop).
+      const code = await createInvite(state.user, email);
+      showInvite(code, email);
+      setStatus(status, "", "");
+      return;
+    }
     if (target.uid === state.user.uid) return setStatus(status, "That's you :)", "err");
     if (state.friends.some((f) => f.uid === target.uid))
       return setStatus(status, "You're already friends.", "err");
@@ -437,6 +448,47 @@ $("addBtn").addEventListener("click", async () => {
     setStatus(status, "Error: " + e.message, "err");
   }
 });
+
+function showInvite(code, email) {
+  const link = INVITE_BASE + code;
+  const out = $("inviteOut");
+  out.classList.remove("hidden");
+  out.innerHTML = `
+    <p class="muted small">${escapeHtml(email)} isn't on Beemo yet. Send them this link — once they install &amp; sign in, you're connected automatically.</p>
+    <div class="invite-link"><span class="invite-url">${escapeHtml(link)}</span><button id="copyInvite">Copy</button></div>
+    <p class="muted small">Or have them enter code <b>${escapeHtml(code)}</b> below.</p>`;
+  out.querySelector("#copyInvite").addEventListener("click", (e) => {
+    copy(link);
+    e.target.textContent = "Copied ✓";
+  });
+}
+
+// Join via a code someone shared.
+$("redeemBtn").addEventListener("click", async () => {
+  const code = $("redeemCode").value.trim();
+  const status = $("redeemStatus");
+  if (!code) return;
+  setStatus(status, "Connecting…", "");
+  try {
+    const inviter = await redeemInvite(state.user, code);
+    setStatus(status, `✓ Connected with ${inviter.displayName}`, "ok");
+    $("redeemCode").value = "";
+  } catch (e) {
+    setStatus(status, "Error: " + e.message, "err");
+  }
+});
+
+// Auto-redeem an invite captured from the landing page (deferred deep link).
+async function checkPendingInvite() {
+  const { [PENDING_INVITE_KEY]: code } = await chrome.storage.local.get(PENDING_INVITE_KEY);
+  if (!code) return;
+  await chrome.storage.local.remove(PENDING_INVITE_KEY);
+  try {
+    const inviter = await redeemInvite(state.user, code);
+    setStatus($("redeemStatus"), `✓ Connected with ${inviter.displayName}`, "ok");
+    document.querySelector('.tab[data-tab="friends"]').click();
+  } catch {}
+}
 
 function renderRequests() {
   const wrap = $("requestsWrap");

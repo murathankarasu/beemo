@@ -26,6 +26,13 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
+  "content_scripts": [
+    {
+      "matches": ["https://murathankarasu.github.io/Beemo/*"],
+      "js": ["invite-capture.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "commands": {
     "open-beemo": {
       "suggested_key": {
