@@ -16,7 +16,8 @@ export async function openCustomerPortal(returnUrl) {
   return data.url;
 }
 
-// Pro = has an active (or trialing) subscription.
+// Pro = has an active (or trialing) subscription. Returns an object with period
+// info so the UI can show renewal / cancellation date.
 export function watchPro(uid, cb) {
   const q = query(
     collection(db, "customers", uid, "subscriptions"),
@@ -24,8 +25,16 @@ export function watchPro(uid, cb) {
   );
   return onSnapshot(
     q,
-    (snap) => cb(!snap.empty),
-    () => cb(false)
+    (snap) => {
+      if (snap.empty) return cb({ active: false });
+      const d = snap.docs[0].data();
+      cb({
+        active: true,
+        cancelAtPeriodEnd: !!d.cancel_at_period_end,
+        currentPeriodEnd: d.current_period_end?.toDate ? d.current_period_end.toDate() : null,
+      });
+    },
+    () => cb({ active: false })
   );
 }
 

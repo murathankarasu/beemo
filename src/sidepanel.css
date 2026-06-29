@@ -52,10 +52,11 @@ body {
 .user { display: flex; align-items: center; gap: 10px; }
 .user img { width: 28px; height: 28px; border-radius: 50%; background: var(--panel-2); object-fit: cover; }
 .icon-btn {
-  background: none; border: none; cursor: pointer; padding: 4px; display: grid; place-items: center;
-  border-radius: 8px; transition: background 0.15s;
+  background: none; border: none; cursor: pointer; padding: 5px; display: grid; place-items: center;
+  border-radius: 8px; color: var(--honey); transition: background 0.15s, color 0.15s, transform 0.12s;
 }
-.icon-btn:hover { background: var(--panel-2); }
+.icon-btn:hover { background: var(--honey-soft); color: var(--honey); }
+.icon-btn:active { transform: rotate(35deg); }
 .ic-power {
   width: 15px; height: 15px; display: block; border: 2px solid var(--muted); border-radius: 50%;
   border-top-color: transparent; position: relative;
@@ -292,6 +293,8 @@ input:focus, textarea:focus {
 }
 .plan-tag { font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 6px; background: var(--panel-2); color: var(--muted); }
 .plan-tag.pro { background: var(--honey); color: var(--on-honey); }
+.set-renew { margin: -10px 0 16px; text-align: left; }
+.set-renew.ending { color: var(--danger); }
 
 /* ---- status text ---- */
 .status { font-size: 12.5px; margin: 9px 0 0; min-height: 16px; }

@@ -49,6 +49,7 @@ const state = {
   friendQuery: "",
   me: null, // own profile doc (plan + usage)
   subPro: false, // active Stripe subscription
+  sub: null, // subscription details (period end, cancel flag)
   composeTabUrl: "", // URL of the tab shown in the composer (for form access)
   unsubs: [],
 };
@@ -89,6 +90,20 @@ function openSettings() {
   tag.textContent = pro ? "PRO" : "Free";
   tag.classList.toggle("pro", pro);
   $("setManage").textContent = pro ? "Manage subscription" : "Upgrade to Pro";
+
+  // Renewal / cancellation date under the plan
+  const renew = $("setRenew");
+  const end = state.sub?.currentPeriodEnd;
+  if (pro && end) {
+    const ds = end.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    const ending = !!state.sub?.cancelAtPeriodEnd;
+    renew.textContent = ending ? `Cancelled — your Pro ends on ${ds}` : `Renews on ${ds}`;
+    renew.classList.toggle("ending", ending);
+    renew.classList.remove("hidden");
+  } else {
+    renew.classList.add("hidden");
+  }
+
   setStatus($("setStatus"), "", "");
   $("settings").classList.remove("hidden");
 }
@@ -172,9 +187,11 @@ function startWatchers() {
       state.me = me;
       renderUsage();
     }),
-    watchPro(uid, (pro) => {
-      state.subPro = pro;
+    watchPro(uid, (sub) => {
+      state.subPro = sub.active;
+      state.sub = sub;
       renderUsage();
+      if (!$("settings").classList.contains("hidden")) openSettings(); // live-refresh if open
     })
   );
 }
