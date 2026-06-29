@@ -10,3 +10,6 @@ serviceAccountKey.json
 # GİZLİ — paketlenmiş eklenti imza anahtarı + paket. ASLA commit'leme.
 *.pem
 *.crx
+
+# store yükleme paketi (build çıktısı)
+*.zip

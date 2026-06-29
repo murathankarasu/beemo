@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Beemo — Privacy Policy</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" />
+    <style>
+      :root { --bg:#16130c; --panel:#1f1a10; --border:#3a3120; --text:#f6edd7; --muted:#b6a884; --honey:#ffb300; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--text); font-family:"Space Grotesk",system-ui,sans-serif;
+        line-height:1.65; padding:40px 20px; }
+      main { max-width:720px; margin:0 auto; }
+      h1 { font-size:30px; font-weight:700; letter-spacing:-.6px; margin:0 0 4px; }
+      h2 { font-size:18px; font-weight:600; margin:28px 0 8px; color:var(--honey); }
+      p, li { color:var(--muted); }
+      a { color:var(--honey); }
+      .updated { color:#897c5e; font-size:13px; margin-bottom:24px; }
+      .logo { width:54px; height:54px; border-radius:14px; margin-bottom:16px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="https://beemo-ten.vercel.app/?logo" alt="" onerror="this.style.display='none'" />
+      <h1>Beemo — Privacy Policy</h1>
+      <p class="updated">Last updated: 30 June 2026</p>
+
+      <p>Beemo is a Chrome extension that lets you send tabs, tab groups, and text to friends,
+      Chrome to Chrome. This policy explains what we collect, why, and your choices.</p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><b>Account</b>: when you sign in with Google, we store your name, email, and profile photo to identify you to friends.</li>
+        <li><b>Friends</b>: the list of people you connect with, and pending invites.</li>
+        <li><b>Items you send/receive</b>: tabs, tab groups, and text you choose to send. If you explicitly tick "include what I typed on this page", the non-password form values you choose travel with that item. We never collect password or hidden fields.</li>
+        <li><b>Usage</b>: a daily count of how many items you've sent (to enforce free-plan limits).</li>
+        <li><b>Billing</b>: payments are processed by Stripe. We never see or store your card details — only your subscription status.</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <p>Solely to provide the service: delivering what you send to the friends you pick, showing
+      your inbox, managing friends and invites, and enforcing plan limits / billing. We do not sell
+      your data, and we do not use it for advertising.</p>
+
+      <h2>Where it's stored</h2>
+      <p>Data is stored in Google Firebase (Cloud Firestore) and protected by security rules so only
+      you and the friends you send to can access the relevant data. Inbox items automatically expire
+      after about 30 days.</p>
+
+      <h2>Sharing</h2>
+      <p>Items are shared only with the specific friend you send them to. We use Google
+      (authentication) and Stripe (payments) as processors. We don't share your data with anyone else.</p>
+
+      <h2>Your choices &amp; rights</h2>
+      <p>You can sign out at any time, remove items from your inbox, and manage or cancel your
+      subscription from the Settings screen. To request deletion of your account and associated data,
+      contact us at the email below and we'll remove it.</p>
+
+      <h2>Contact</h2>
+      <p>Questions or deletion requests: <a href="mailto:beemo.app.help@gmail.com">beemo.app.help@gmail.com</a></p>
+    </main>
+  </body>
+</html>
