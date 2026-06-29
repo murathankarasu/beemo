@@ -28,7 +28,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://murathankarasu.github.io/Beemo/*"],
+      "matches": ["https://beemo-ten.vercel.app/*"],
       "js": ["invite-capture.js"],
       "run_at": "document_idle"
     }

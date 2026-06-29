@@ -26,7 +26,7 @@ import {
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
 const PENDING_INVITE_KEY = "beemo_pending_invite";
-const INVITE_BASE = "https://murathankarasu.github.io/Beemo/?invite=";
+const INVITE_BASE = "https://beemo-ten.vercel.app/?invite=";
 
 // Short, clear explanation shown under the type chips.
 const TYPE_HINTS = {
