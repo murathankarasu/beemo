@@ -48,6 +48,7 @@ const state = {
   friendQuery: "",
   me: null, // own profile doc (plan + usage)
   subPro: false, // active Stripe subscription
+  composeTabUrl: "", // URL of the tab shown in the composer (for form access)
   unsubs: [],
 };
 
@@ -355,25 +356,16 @@ async function renderComposeBody() {
   if (state.composeType === "tab") {
     const tab = state.pendingTab || (await getCurrentTab());
     body.appendChild(tabPreview(tab));
+    state.composeTabUrl = tab.url || tab.payload?.url || "";
     const wrap = document.createElement("label");
     wrap.className = "checkrow";
     wrap.innerHTML = `<input type="checkbox" id="includeForm" /> <span>Include what I typed on this page <small class="muted">(forms — never passwords)</small></span>`;
     body.appendChild(wrap);
     // Only the live current tab can be read — disable for right-click/shortcut captures.
-    const includeEl = wrap.querySelector("#includeForm");
     if (state.pendingTab) {
+      const includeEl = wrap.querySelector("#includeForm");
       includeEl.disabled = true;
       wrap.title = "Available when sending the tab you're currently on.";
-    } else {
-      includeEl.addEventListener("change", async (e) => {
-        if (!e.target.checked) return;
-        const pat = originPattern(tab.url || ""); // sync read → keeps the user gesture for the prompt
-        const ok = pat ? await chrome.permissions.request({ origins: [pat] }) : false;
-        if (!ok) {
-          e.target.checked = false;
-          setStatus($("sendStatus"), "Form access not granted for this site.", "err");
-        }
-      });
     }
   } else if (state.composeType === "tabgroup") {
     if (!state.tabGroupTabs) state.tabGroupTabs = await getCurrentGroupTabs();
@@ -492,6 +484,20 @@ $("sendBtn").addEventListener("click", async () => {
   if (!isPro() && sendsLeft() <= 0) {
     openPaywall();
     return;
+  }
+  // If "include form data" is on, ask for site access now — this is the first
+  // await, so the click's user gesture is still valid for the permission prompt.
+  if (
+    state.composeType === "tab" &&
+    !state.pendingTab &&
+    document.getElementById("includeForm")?.checked
+  ) {
+    const pat = originPattern(state.composeTabUrl || "");
+    if (pat) {
+      try {
+        await chrome.permissions.request({ origins: [pat] });
+      } catch {}
+    }
   }
   btn.disabled = true;
   setStatus(status, "Sending…", "");
