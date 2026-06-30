@@ -1,0 +1,11 @@
+{
+  "name": "functions",
+  "description": "Beemo Cloud Functions — Lemon Squeezy billing webhook",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.0"
+  }
+}

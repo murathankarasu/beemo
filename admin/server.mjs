@@ -32,7 +32,6 @@ const db = admin.firestore();
 const ADMIN_TOKEN =
   process.env.ADMIN_TOKEN ||
   Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const PORT = Number(process.env.PORT || 8787);
 
 const send = (res, code, body, type = "application/json") => {
@@ -61,20 +60,15 @@ async function listUsers() {
     const u = doc.data();
     let sub = null;
     try {
-      const s = await db
-        .collection("customers")
-        .doc(doc.id)
-        .collection("subscriptions")
-        .where("status", "in", ["active", "trialing"])
-        .limit(1)
-        .get();
-      if (!s.empty) {
-        const sd = s.docs[0].data();
+      const b = await db.collection("billing").doc(doc.id).get();
+      if (b.exists) {
+        const bd = b.data();
         sub = {
-          id: s.docs[0].id,
-          status: sd.status,
-          cancelAtPeriodEnd: !!sd.cancel_at_period_end,
-          currentPeriodEnd: secs(sd.current_period_end),
+          active: !!bd.active,
+          status: bd.status || null,
+          source: bd.source || null,
+          cancelAtPeriodEnd: !!bd.cancelAtPeriodEnd,
+          currentPeriodEnd: secs(bd.cancelAtPeriodEnd ? bd.endsAt : bd.renewsAt),
         };
       }
     } catch {}
@@ -83,12 +77,12 @@ async function listUsers() {
       displayName: u.displayName || "",
       email: u.email || "",
       photoURL: u.photoURL || "",
-      plan: u.plan || "free",
+      plan: sub?.active ? "pro" : "free",
       usageSends: u.usageSends || 0,
       usageDate: u.usageDate || "",
       createdAt: secs(u.createdAt),
       sub,
-      isPro: u.plan === "pro" || !!sub,
+      isPro: !!sub?.active,
     });
   }
   out.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -96,28 +90,20 @@ async function listUsers() {
 }
 
 async function setPlan(uid, plan) {
-  // "pro" = comp (grant), anything else removes the comp field.
+  // Comp: write the admin-only billing doc. "pro" grants, anything else removes.
   await db
-    .collection("users")
+    .collection("billing")
     .doc(uid)
     .set(
-      { plan: plan === "pro" ? "pro" : admin.firestore.FieldValue.delete() },
+      {
+        active: plan === "pro",
+        status: plan === "pro" ? "comp" : "comp_removed",
+        source: "comp",
+        cancelAtPeriodEnd: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
       { merge: true }
     );
-}
-
-async function setCancel(subId, cancel) {
-  if (!STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY env verilmedi (abonelik iptali kapalı)");
-  const res = await fetch(`https://api.stripe.com/v1/subscriptions/${subId}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: `cancel_at_period_end=${cancel ? "true" : "false"}`,
-  });
-  if (!res.ok) throw new Error("Stripe: " + (await res.text()));
-  return res.json();
 }
 
 const server = createServer(async (req, res) => {
@@ -129,18 +115,12 @@ const server = createServer(async (req, res) => {
     if (!authed(req)) return send(res, 401, { error: "unauthorized" });
     try {
       if (req.method === "GET" && url.pathname === "/api/users") {
-        return send(res, 200, { users: await listUsers(), stripe: !!STRIPE_SECRET_KEY });
+        return send(res, 200, { users: await listUsers(), stripe: false });
       }
       if (req.method === "POST" && url.pathname === "/api/plan") {
         const { uid, plan } = await readBody(req);
         if (!uid) return send(res, 400, { error: "uid required" });
         await setPlan(uid, plan);
-        return send(res, 200, { ok: true });
-      }
-      if (req.method === "POST" && url.pathname === "/api/cancel") {
-        const { subId, cancel } = await readBody(req);
-        if (!subId) return send(res, 400, { error: "subId required" });
-        await setCancel(subId, cancel !== false);
         return send(res, 200, { ok: true });
       }
       return send(res, 404, { error: "not found" });
@@ -154,6 +134,6 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`\n🐝  Beemo admin → http://127.0.0.1:${PORT}`);
   console.log(`    Admin token: ${ADMIN_TOKEN}`);
-  if (!STRIPE_SECRET_KEY) console.log(`    (STRIPE_SECRET_KEY env verirsen abonelik iptal/resume da açılır)`);
+  console.log(`    (Make/Remove Pro = comp via billing/{uid}; gerçek iptal Lemon Squeezy portalından)`);
   console.log("");
 });

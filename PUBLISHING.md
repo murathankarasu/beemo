@@ -48,9 +48,9 @@ warning. If you leave it in Testing, only your added test users can sign in.
 ## After it's published
 - [ ] Update the landing "Add Beemo to Chrome" button (`docs/index.html`) to the
       Web Store URL.
-- [ ] For **real payments**, switch Stripe to **Live mode**: live API key in the
-      Firebase extension, a live recurring price, a live webhook, and put the live
-      `price_…` in `src/config.js`. (Until then billing runs in test mode — no real charges.)
+- [ ] For **real payments**, take Lemon Squeezy out of **Test mode**: use the live
+      store/buy link in `src/config.js` and the live webhook (see BILLING.md). Until
+      then billing runs in test mode — no real charges.
 
 ## Recommended before charging real money
 - [ ] Move the daily-send quota check into a Cloud Function (server-enforced) so it

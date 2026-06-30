@@ -1,63 +1,27 @@
-// Billing via the official "Run Payments with Stripe" Firebase extension
-// (firestore-stripe-payments). The extension writes subscription state with the
-// Admin SDK, so users can READ but never forge their Pro status.
+// Billing via Lemon Squeezy (Merchant of Record — pays out to Turkey, handles tax).
 //
-// Data model the extension uses:
-//   customers/{uid}/checkout_sessions/{id}  ← we create; extension fills `url`
-//   customers/{uid}/subscriptions/{id}      ← extension writes; status === active
-import { collection, query, where, onSnapshot, addDoc } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "./firebase.js";
+// Entitlement lives in billing/{uid}, written ONLY by our Cloud Function webhook
+// (or the admin tool), so users can read but never forge their Pro status.
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "./firebase.js";
+import { LEMONSQUEEZY_CHECKOUT_URL } from "./config.js";
 
-// Open the Stripe customer portal (manage / cancel subscription, update card).
-export async function openCustomerPortal(returnUrl) {
-  const fn = httpsCallable(functions, "ext-firestore-stripe-payments-createPortalLink");
-  const { data } = await fn({ returnUrl });
-  return data.url;
-}
-
-// Pro = has an active (or trialing) subscription. Returns an object with period
-// info so the UI can show renewal / cancellation date.
-export function watchPro(uid, cb) {
-  const q = query(
-    collection(db, "customers", uid, "subscriptions"),
-    where("status", "in", ["trialing", "active"])
-  );
+// Watch the user's entitlement doc. cb receives { active, status, renewsAt,
+// endsAt, cancelAtPeriodEnd, portalUrl } or null.
+export function watchBilling(uid, cb) {
   return onSnapshot(
-    q,
-    (snap) => {
-      if (snap.empty) return cb({ active: false });
-      const d = snap.docs[0].data();
-      cb({
-        active: true,
-        cancelAtPeriodEnd: !!d.cancel_at_period_end,
-        currentPeriodEnd: d.current_period_end?.toDate ? d.current_period_end.toDate() : null,
-      });
-    },
-    () => cb({ active: false })
+    doc(db, "billing", uid),
+    (snap) => cb(snap.exists() ? snap.data() : null),
+    () => cb(null)
   );
 }
 
-// Create a Stripe Checkout session and return its URL (open it in a new tab).
-export async function startCheckout(uid, priceId, successUrl, cancelUrl) {
-  const ref = await addDoc(collection(db, "customers", uid, "checkout_sessions"), {
-    price: priceId,
-    mode: "subscription",
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    allow_promotion_codes: true,
-  });
-  return new Promise((resolve, reject) => {
-    const unsub = onSnapshot(ref, (snap) => {
-      const data = snap.data() || {};
-      if (data.error) {
-        unsub();
-        reject(new Error(data.error.message || "Checkout failed"));
-      }
-      if (data.url) {
-        unsub();
-        resolve(data.url);
-      }
-    });
-  });
+// Hosted Lemon Squeezy checkout, with the Firebase uid passed as custom data so
+// the webhook can map the subscription back to this user.
+export function checkoutUrl(uid, email) {
+  // Build the query manually to keep the literal checkout[...] brackets.
+  const parts = [`checkout[custom][uid]=${encodeURIComponent(uid)}`];
+  if (email) parts.push(`checkout[email]=${encodeURIComponent(email)}`);
+  const sep = LEMONSQUEEZY_CHECKOUT_URL.includes("?") ? "&" : "?";
+  return LEMONSQUEEZY_CHECKOUT_URL + sep + parts.join("&");
 }

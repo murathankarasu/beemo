@@ -13,11 +13,8 @@ export const firebaseConfig = {
 // manifest.json'daki oauth2.client_id ile AYNI olmalı.
 export const OAUTH_CLIENT_ID = "874064701796-q6q15vv9cv2p6lobafr2105ga19iuf3h.apps.googleusercontent.com";
 
-// ---- Billing (Stripe) ----
-// Stripe'ta bir ürün + aylık fiyat oluştur; firestore-stripe-payments eklentisi
-// fiyatı Firestore'a senkronlar. O fiyatın price_id'sini buraya yapıştır.
-export const STRIPE_PRICE_ID = "price_1TnmjOFsN5ZpT0lT6sffuPS7";
+// ---- Billing (Lemon Squeezy) ----
+// Lemon Squeezy'de bir abonelik ürünü + aylık varyant oluştur, "Share / Buy link"
+// URL'ini buraya yapıştır (ör. https://STORE.lemonsqueezy.com/buy/UUID).
+export const LEMONSQUEEZY_CHECKOUT_URL = "https://STORE.lemonsqueezy.com/buy/REPLACE_ME";
 export const FREE_DAILY_SENDS = 5; // free planda günlük gönderim; alma her zaman sınırsız
-export const CHECKOUT_SUCCESS_URL = "https://beemo-ten.vercel.app/?checkout=success";
-export const CHECKOUT_CANCEL_URL = "https://beemo-ten.vercel.app/?checkout=cancel";
-export const LANDING_URL = "https://beemo-ten.vercel.app/";

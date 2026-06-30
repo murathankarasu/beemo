@@ -16,14 +16,8 @@ import {
   incrementSendUsage,
   sendsUsedToday,
 } from "./db.js";
-import { watchPro, startCheckout, openCustomerPortal } from "./billing.js";
-import {
-  STRIPE_PRICE_ID,
-  FREE_DAILY_SENDS,
-  CHECKOUT_SUCCESS_URL,
-  CHECKOUT_CANCEL_URL,
-  LANDING_URL,
-} from "./config.js";
+import { watchBilling, checkoutUrl } from "./billing.js";
+import { LEMONSQUEEZY_CHECKOUT_URL, FREE_DAILY_SENDS } from "./config.js";
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
 const PENDING_INVITE_KEY = "beemo_pending_invite";
@@ -47,15 +41,14 @@ const state = {
   tabGroupTabs: null, // editable list for the "Tab group" composer
   pickerQuery: "",
   friendQuery: "",
-  me: null, // own profile doc (plan + usage)
-  subPro: false, // active Stripe subscription
-  sub: null, // subscription details (period end, cancel flag)
+  me: null, // own profile doc (usage)
+  billing: null, // entitlement doc (active, renewsAt, portalUrl…)
   composeTabUrl: "", // URL of the tab shown in the composer (for form access)
   unsubs: [],
 };
 
 function isPro() {
-  return state.subPro || state.me?.plan === "pro";
+  return state.billing?.active === true;
 }
 function sendsLeft() {
   return Math.max(0, FREE_DAILY_SENDS - sendsUsedToday(state.me));
@@ -93,10 +86,12 @@ function openSettings() {
 
   // Renewal / cancellation date under the plan
   const renew = $("setRenew");
-  const end = state.sub?.currentPeriodEnd;
-  if (pro && end) {
-    const ds = end.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-    const ending = !!state.sub?.cancelAtPeriodEnd;
+  const b = state.billing;
+  const ending = !!b?.cancelAtPeriodEnd;
+  const tsRaw = ending ? b?.endsAt : b?.renewsAt;
+  const date = tsRaw?.toDate ? tsRaw.toDate() : null;
+  if (pro && date) {
+    const ds = date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
     renew.textContent = ending ? `Cancelled — your Pro ends on ${ds}` : `Renews on ${ds}`;
     renew.classList.toggle("ending", ending);
     renew.classList.remove("hidden");
@@ -110,23 +105,18 @@ function openSettings() {
 function closeSettings() {
   $("settings").classList.add("hidden");
 }
-$("setManage").addEventListener("click", async () => {
+$("setManage").addEventListener("click", () => {
   if (!isPro()) {
     closeSettings();
     openPaywall();
     return;
   }
-  const btn = $("setManage");
-  btn.disabled = true;
-  setStatus($("setStatus"), "Opening billing portal…", "");
-  try {
-    const url = await openCustomerPortal(LANDING_URL);
+  const url = state.billing?.portalUrl;
+  if (url) {
     chrome.tabs.create({ url });
     setStatus($("setStatus"), "Manage your plan in the new tab.", "ok");
-  } catch (e) {
-    setStatus($("setStatus"), "Error: " + e.message, "err");
-  } finally {
-    btn.disabled = false;
+  } else {
+    setStatus($("setStatus"), "Billing portal link isn't ready yet — try again shortly.", "err");
   }
 });
 
@@ -187,9 +177,8 @@ function startWatchers() {
       state.me = me;
       renderUsage();
     }),
-    watchPro(uid, (sub) => {
-      state.subPro = sub.active;
-      state.sub = sub;
+    watchBilling(uid, (billing) => {
+      state.billing = billing;
       renderUsage();
       if (!$("settings").classList.contains("hidden")) openSettings(); // live-refresh if open
     })
@@ -599,28 +588,13 @@ function closePaywall() {
 }
 $("paywallClose").addEventListener("click", closePaywall);
 $("paywallLater").addEventListener("click", closePaywall);
-$("paywallUpgrade").addEventListener("click", async () => {
-  const btn = $("paywallUpgrade");
-  if (!STRIPE_PRICE_ID || STRIPE_PRICE_ID.includes("REPLACE_ME")) {
+$("paywallUpgrade").addEventListener("click", () => {
+  if (!LEMONSQUEEZY_CHECKOUT_URL || LEMONSQUEEZY_CHECKOUT_URL.includes("REPLACE_ME")) {
     setStatus($("paywallStatus"), "Billing isn't set up yet — coming soon.", "err");
     return;
   }
-  btn.disabled = true;
-  setStatus($("paywallStatus"), "Opening secure checkout…", "");
-  try {
-    const url = await startCheckout(
-      state.user.uid,
-      STRIPE_PRICE_ID,
-      CHECKOUT_SUCCESS_URL,
-      CHECKOUT_CANCEL_URL
-    );
-    chrome.tabs.create({ url });
-    setStatus($("paywallStatus"), "Continue in the new tab to finish.", "ok");
-  } catch (e) {
-    setStatus($("paywallStatus"), "Error: " + e.message, "err");
-  } finally {
-    btn.disabled = false;
-  }
+  chrome.tabs.create({ url: checkoutUrl(state.user.uid, state.user.email) });
+  setStatus($("paywallStatus"), "Continue in the new tab to finish.", "ok");
 });
 
 async function buildItem(friend) {
