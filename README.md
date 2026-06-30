@@ -1,76 +1,76 @@
-# Beemo — Send tabs, tab groups & text to a friend
+<div align="center">
 
-Send the tab you're on, a tab group, or a note straight to a friend's Chrome — in **one shortcut**.
-No more copy → open WhatsApp/Discord → paste. Like DMs, but for your browser.
+<img src="assets/beemo-pro-512.png" width="112" alt="Beemo logo" />
 
-## Features
-- 🔗 Send the current tab or any link
-- 🗂️ Send a tab group (or every tab in the window) — and **remove tabs you don't want** before sending
-- 📝 Send text, notes, and snippets (also from the right-click menu)
-- 📋 Optionally carry a page's **form values** with a shared tab so they're pre-filled on open (passwords never included)
-- 👥 Add friends by email, accept/decline requests
-- ⌨️ Shortcut: `Cmd/Ctrl+Shift+S` opens the panel ready to send the current tab
-- 🔔 Real-time inbox with a browser notification when something arrives (while the panel is open)
+# Beemo
 
-## Architecture
-- **Extension**: Manifest V3 with `chrome.sidePanel`, `chrome.commands`, `chrome.contextMenus`, `chrome.scripting`
-- **Backend**: Firebase (Google Auth + Firestore real-time). No server code.
-- **Build**: esbuild bundles Firebase locally (MV3 forbids remote code). The logo is rasterized from `src/logo.svg`.
-- **Permissions**: form-fill uses `optional_host_permissions`, requested per-site at runtime — not a blanket "read all sites" grant.
+### Send tabs, tab groups & text to a friend — Chrome to Chrome.
 
-```
-src/              source
-build.mjs         esbuild + icon rasterization
-dist/             build output ← load this in Chrome
-firestore.rules   security rules
-```
+One shortcut, pick a friend, and it lands in their browser instantly.
+No more copying links into WhatsApp or Discord.
 
-## Setup
+**[yourfavbeemo.com](https://yourfavbeemo.com)** · Free · Manifest V3 · Chrome side panel
 
-### 1) Install & build
+</div>
+
+---
+
+<div align="center">
+<img src="store/screenshot-1.png" width="49%" alt="Send a tab to a friend" />
+<img src="store/screenshot-2.png" width="49%" alt="Real-time inbox" />
+</div>
+
+## What it does
+
+Beemo is the fastest way to share with a friend, browser to browser. Hit a shortcut,
+choose a friend, and whatever you're sending shows up in their Beemo inbox in real time.
+
+- 🔗 **Send any tab** — the page you're on, or any link
+- 🗂️ **Whole tab groups** — share a research session; trim the tabs you don't want first
+- 📝 **Text & notes** — type it, or right-click selected text on any page
+- 📋 **Carry form data** — optionally bring what you typed in a page's forms (passwords never included)
+- 👥 **Friends & invites** — add by email, or share an invite link that auto-connects
+- ⚡ **Real-time inbox** — open a tab, copy a note, or restore a whole group with a tap
+- ⌨️ **Shortcut** — `Cmd/Ctrl + Shift + S` opens Beemo ready to send the current tab
+
+**Completely free.** No limits, no subscription.
+
+## How it works
+
+1. **Add a friend** — by email or an invite link. They receive for free, always.
+2. **Hit the shortcut** — the side panel opens with your current tab ready.
+3. **Pick & send** — choose a friend and it lands in their Chrome instantly.
+
+## Tech
+
+- **Extension**: Manifest V3 — `sidePanel`, `commands`, `contextMenus`, `scripting`, `tabs`/`tabGroups`
+- **Backend**: Firebase (Google Auth + Firestore real-time). No server to run.
+- **Build**: esbuild bundles Firebase locally (MV3 forbids remote code); the Space Grotesk
+  webfont and the bee-cow logo are bundled too.
+- **Privacy by design**: items go only to the friend you pick; form-fill is opt-in, per-site,
+  and never includes password fields. Inbox items auto-expire.
+
+## Run locally
+
 ```bash
 npm install
-npm run build      # produces dist/
+npm run build          # outputs dist/
+```
+Then `chrome://extensions` → enable Developer mode → **Load unpacked** → select `dist/`.
+
+To use your own backend, plug a Firebase web config into `src/config.js` and a Google
+OAuth client ID into `src/manifest.json` (see comments in those files).
+
+```
+src/        extension source        functions/   (optional) billing webhook
+build.mjs   esbuild + icon raster    admin/       local users dashboard
+dist/       build output             docs/        marketing site (yourfavbeemo.com)
 ```
 
-### 2) Firebase
-1. Create a project at https://console.firebase.google.com
-2. **Authentication → Sign-in method → Google** → enable
-3. **Firestore Database** → create (production mode)
-4. **Rules** → paste `firestore.rules` → Publish
-5. Project settings → **Your apps → Web app** → copy the config into `src/config.js`
+## Links
 
-### 3) Google OAuth (for chrome.identity)
-1. Load the extension (step 4) and copy its **Extension ID**
-2. Google Cloud Console → **APIs & Services → Credentials → Create OAuth client ID**
-3. Type **Chrome Extension** → paste the Extension ID
-4. Put the client ID into `src/manifest.json` (`oauth2.client_id`) → `npm run build`
+- 🌐 Website — [yourfavbeemo.com](https://yourfavbeemo.com)
+- 🔒 [Privacy Policy](https://yourfavbeemo.com/privacy.html) · [Terms](https://yourfavbeemo.com/terms.html)
+- ✉️ Contact — lorienapptr@gmail.com
 
-### 4) Load in Chrome
-1. `chrome://extensions` → enable **Developer mode**
-2. **Load unpacked** → select `dist/`
-
-## Development
-```bash
-npm run watch   # rebuilds dist/ on change; reload from chrome://extensions
-```
-
-## Testing (two accounts)
-Use two Chrome profiles / Google accounts:
-1. Install + sign in on both
-2. Add each other by email and accept the request
-3. Send a tab / tab group / text — it appears in the other's Inbox instantly
-
-## Privacy & data
-- **Sign-in**: Google account (name, email, photo) is stored in Firestore only to identify you to friends.
-- **What's stored**: your profile, your friends list, and items in each user's inbox until deleted.
-- **Form-fill** values travel with a shared tab only when you opt in, per-site, and **never include password or hidden fields**.
-- **Sign out** clears cached Google tokens; the next sign-in asks you to choose an account again.
-- Account/data deletion, retention limits, and a published privacy policy are tracked for the public release (GDPR/CCPA readiness).
-
-## Roadmap
-- [ ] Account & data deletion + privacy policy (GDPR/CCPA)
-- [ ] Push notifications when the panel is closed (FCM)
-- [ ] Subscriptions (Stripe) with free/premium limits
-- [ ] File sharing
-- [ ] Search friends by @handle
+<div align="center"><sub>Built with 🐝 — just Beemo it.</sub></div>
