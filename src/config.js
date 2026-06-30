@@ -16,5 +16,5 @@ export const OAUTH_CLIENT_ID = "874064701796-q6q15vv9cv2p6lobafr2105ga19iuf3h.ap
 // ---- Billing (Lemon Squeezy) ----
 // Lemon Squeezy'de bir abonelik ürünü + aylık varyant oluştur, "Share / Buy link"
 // URL'ini buraya yapıştır (ör. https://STORE.lemonsqueezy.com/buy/UUID).
-export const LEMONSQUEEZY_CHECKOUT_URL = "https://STORE.lemonsqueezy.com/buy/REPLACE_ME";
+export const LEMONSQUEEZY_CHECKOUT_URL = "https://beemo.lemonsqueezy.com/checkout/buy/8cb95820-f001-42ea-9448-7fe91d893ac2";
 export const FREE_DAILY_SENDS = 5; // free planda günlük gönderim; alma her zaman sınırsız
