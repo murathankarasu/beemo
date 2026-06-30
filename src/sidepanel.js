@@ -21,7 +21,7 @@ import { LEMONSQUEEZY_CHECKOUT_URL, FREE_DAILY_SENDS } from "./config.js";
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
 const PENDING_INVITE_KEY = "beemo_pending_invite";
-const INVITE_BASE = "https://beemo-ten.vercel.app/?invite=";
+const INVITE_BASE = "https://yourfavbeemo.com/?invite=";
 
 // Short, clear explanation shown under the type chips.
 const TYPE_HINTS = {
