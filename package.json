@@ -1,6 +1,6 @@
 {
   "name": "beemo-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Beemo — Chrome'dan Chrome'a arkadaşına sekme, text ve parola yolla",
   "type": "module",

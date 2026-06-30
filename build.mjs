@@ -19,9 +19,11 @@ for (const size of [16, 48, 128]) {
 }
 
 // ---- Copy static files ----
-for (const f of ["manifest.json", "sidepanel.html", "sidepanel.css"]) {
+for (const f of ["manifest.json", "sidepanel.html", "sidepanel.css", "fonts.css"]) {
   await cp(path.join("src", f), path.join(outdir, f));
 }
+// Bundled webfont (Space Grotesk) — no remote font loading.
+await cp("src/fonts", path.join(outdir, "fonts"), { recursive: true });
 
 // ---- Bundle JS ----
 const buildOpts = {
