@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Beemo — Send tabs, tab groups & text to a friend",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Send any tab, tab group, or note straight to a friend's Chrome in one shortcut — no copy-pasting into other apps.",
   "minimum_chrome_version": "116",
   "permissions": [

@@ -12,12 +12,7 @@ import {
   deleteInboxItem,
   createInvite,
   redeemInvite,
-  watchMe,
-  incrementSendUsage,
-  sendsUsedToday,
 } from "./db.js";
-import { watchBilling, checkoutUrl } from "./billing.js";
-import { LEMONSQUEEZY_CHECKOUT_URL, FREE_DAILY_SENDS } from "./config.js";
 const $ = (id) => document.getElementById(id);
 const PENDING_KEY = "beemo_pending";
 const PENDING_INVITE_KEY = "beemo_pending_invite";
@@ -41,18 +36,9 @@ const state = {
   tabGroupTabs: null, // editable list for the "Tab group" composer
   pickerQuery: "",
   friendQuery: "",
-  me: null, // own profile doc (usage)
-  billing: null, // entitlement doc (active, renewsAt, portalUrl…)
   composeTabUrl: "", // URL of the tab shown in the composer (for form access)
   unsubs: [],
 };
-
-function isPro() {
-  return state.billing?.active === true;
-}
-function sendsLeft() {
-  return Math.max(0, FREE_DAILY_SENDS - sendsUsedToday(state.me));
-}
 
 const FRIEND_RENDER_CAP = 100; // keep the DOM small even with thousands of friends
 
@@ -78,47 +64,12 @@ function openSettings() {
   $("setAvatar").src = u.photoURL || "";
   $("setName").textContent = u.displayName || "";
   $("setEmail").textContent = u.email || "";
-  const pro = isPro();
-  const tag = $("setPlan");
-  tag.textContent = pro ? "PRO" : "Free";
-  tag.classList.toggle("pro", pro);
-  $("setManage").textContent = pro ? "Manage subscription" : "Upgrade to Pro";
-
-  // Renewal / cancellation date under the plan
-  const renew = $("setRenew");
-  const b = state.billing;
-  const ending = !!b?.cancelAtPeriodEnd;
-  const tsRaw = ending ? b?.endsAt : b?.renewsAt;
-  const date = tsRaw?.toDate ? tsRaw.toDate() : null;
-  if (pro && date) {
-    const ds = date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-    renew.textContent = ending ? `Cancelled — your Pro ends on ${ds}` : `Renews on ${ds}`;
-    renew.classList.toggle("ending", ending);
-    renew.classList.remove("hidden");
-  } else {
-    renew.classList.add("hidden");
-  }
-
   setStatus($("setStatus"), "", "");
   $("settings").classList.remove("hidden");
 }
 function closeSettings() {
   $("settings").classList.add("hidden");
 }
-$("setManage").addEventListener("click", () => {
-  if (!isPro()) {
-    closeSettings();
-    openPaywall();
-    return;
-  }
-  const url = state.billing?.portalUrl;
-  if (url) {
-    chrome.tabs.create({ url });
-    setStatus($("setStatus"), "Manage your plan in the new tab.", "ok");
-  } else {
-    setStatus($("setStatus"), "Billing portal link isn't ready yet — try again shortly.", "err");
-  }
-});
 
 $("pickerSearch").addEventListener("input", (e) => {
   state.pickerQuery = e.target.value;
@@ -172,32 +123,8 @@ function startWatchers() {
       renderInbox();
       const unread = inbox.filter((m) => !m.read).length;
       if (unread > prevUnread) notifyNew(inbox[0]);
-    }),
-    watchMe(uid, (me) => {
-      state.me = me;
-      renderUsage();
-    }),
-    watchBilling(uid, (billing) => {
-      state.billing = billing;
-      renderUsage();
-      if (!$("settings").classList.contains("hidden")) openSettings(); // live-refresh if open
     })
   );
-}
-
-function renderUsage() {
-  const line = $("usageLine");
-  if (!line) return;
-  if (isPro()) {
-    line.innerHTML = `<span class="pro-badge">PRO</span> Unlimited sending`;
-    return;
-  }
-  const left = sendsLeft();
-  line.innerHTML = `${left}/${FREE_DAILY_SENDS} free sends left today · <a href="#" id="goProLink">Go Pro</a>`;
-  line.querySelector("#goProLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    openPaywall();
-  });
 }
 
 // ---------------- Tabs ----------------
@@ -543,11 +470,6 @@ $("sendBtn").addEventListener("click", async () => {
   const status = $("sendStatus");
   const friend = state.friends.find((f) => f.uid === state.selectedFriendUid);
   if (!friend) return;
-  // Paywall: free plan can only send a few times a day. Receiving stays free.
-  if (!isPro() && sendsLeft() <= 0) {
-    openPaywall();
-    return;
-  }
   // If "include form data" is on, ask for site access now — this is the first
   // await, so the click's user gesture is still valid for the permission prompt.
   if (
@@ -567,7 +489,6 @@ $("sendBtn").addEventListener("click", async () => {
   try {
     const item = await buildItem(friend);
     await sendItem(state.user, friend.uid, item);
-    if (!isPro()) await incrementSendUsage(state.user.uid, state.me);
     setStatus(status, `✓ Sent to ${friend.displayName}`, "ok");
     await clearPending();
     if (state.composeType === "text") $("textInput").value = "";
@@ -577,24 +498,6 @@ $("sendBtn").addEventListener("click", async () => {
   } finally {
     btn.disabled = false;
   }
-});
-
-// ---------------- Paywall ----------------
-function openPaywall() {
-  $("paywall").classList.remove("hidden");
-}
-function closePaywall() {
-  $("paywall").classList.add("hidden");
-}
-$("paywallClose").addEventListener("click", closePaywall);
-$("paywallLater").addEventListener("click", closePaywall);
-$("paywallUpgrade").addEventListener("click", () => {
-  if (!LEMONSQUEEZY_CHECKOUT_URL || LEMONSQUEEZY_CHECKOUT_URL.includes("REPLACE_ME")) {
-    setStatus($("paywallStatus"), "Billing isn't set up yet — coming soon.", "err");
-    return;
-  }
-  chrome.tabs.create({ url: checkoutUrl(state.user.uid, state.user.email) });
-  setStatus($("paywallStatus"), "Continue in the new tab to finish.", "ok");
 });
 
 async function buildItem(friend) {
