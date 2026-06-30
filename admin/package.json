@@ -1,0 +1,13 @@
+{
+  "name": "beemo-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Beemo local admin dashboard — view users, manage Pro/subscriptions",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  }
+}

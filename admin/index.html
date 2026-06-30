@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Beemo Admin</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+    <style>
+      :root { --bg:#16130c; --panel:#1f1a10; --panel2:#2a2315; --border:#3a3120; --text:#f6edd7; --muted:#b6a884; --faint:#897c5e; --honey:#ffb300; --on:#1a1206; --danger:#e5544b; --ok:#9bd362; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--text); font-family:"Space Grotesk",system-ui,sans-serif; padding:28px; }
+      h1 { font-size:24px; font-weight:700; letter-spacing:-.5px; margin:0; display:flex; align-items:center; gap:10px; }
+      .bar { display:flex; gap:10px; align-items:center; margin:18px 0; flex-wrap:wrap; }
+      input { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:9px 12px; font:inherit; }
+      input:focus { outline:none; border-color:var(--honey); }
+      button { font:600 13px "Space Grotesk",sans-serif; cursor:pointer; border-radius:9px; padding:7px 12px; border:1px solid var(--border); background:var(--panel2); color:var(--text); }
+      button:hover { border-color:var(--honey); }
+      button.honey { background:var(--honey); color:var(--on); border:none; }
+      .muted { color:var(--muted); }
+      table { width:100%; border-collapse:collapse; font-size:13.5px; }
+      th { text-align:left; color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:1px; padding:8px 10px; border-bottom:1px solid var(--border); }
+      td { padding:10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+      tr:hover td { background:rgba(255,179,0,.03); }
+      .who { display:flex; align-items:center; gap:10px; }
+      .who img { width:30px; height:30px; border-radius:50%; background:var(--panel2); object-fit:cover; }
+      .tag { font-weight:700; font-size:11px; padding:2px 9px; border-radius:6px; background:var(--panel2); color:var(--muted); }
+      .tag.pro { background:var(--honey); color:var(--on); }
+      .sub { font-size:12px; color:var(--muted); }
+      .sub.cancel { color:var(--danger); }
+      .acts { display:flex; gap:6px; flex-wrap:wrap; }
+      .count { color:var(--faint); font-size:13px; }
+      .err { color:var(--danger); }
+    </style>
+  </head>
+  <body>
+    <h1><span style="width:22px;height:22px;border-radius:6px;background:repeating-linear-gradient(135deg,#ffb300 0 6px,#15140f 6px 12px);display:inline-block"></span> Beemo Admin</h1>
+
+    <div class="bar">
+      <input id="search" placeholder="Search name or email…" style="flex:1;min-width:200px" />
+      <span id="count" class="count"></span>
+      <button id="refresh">Refresh</button>
+    </div>
+    <div id="msg" class="err"></div>
+    <table>
+      <thead>
+        <tr><th>User</th><th>Plan</th><th>Subscription</th><th>Usage</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let TOKEN = localStorage.getItem("beemo_admin_token") || "";
+      let DATA = [];
+      let STRIPE = false;
+
+      function ensureToken() {
+        if (!TOKEN) {
+          TOKEN = prompt("Admin token (sunucu başlarken terminalde yazıyor):") || "";
+          localStorage.setItem("beemo_admin_token", TOKEN);
+        }
+        return TOKEN;
+      }
+      async function api(path, method = "GET", body) {
+        const res = await fetch(path, {
+          method,
+          headers: { "x-admin-token": ensureToken(), "content-type": "application/json" },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        if (res.status === 401) {
+          localStorage.removeItem("beemo_admin_token");
+          TOKEN = "";
+          throw new Error("Token yanlış — yeniden gir");
+        }
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || "error");
+        return j;
+      }
+      function fmtDate(secs) {
+        if (!secs) return "";
+        return new Date(secs * 1000).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      }
+      function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+      async function load() {
+        $("msg").textContent = "";
+        try {
+          const j = await api("/api/users");
+          DATA = j.users; STRIPE = j.stripe;
+          render();
+        } catch (e) { $("msg").textContent = e.message; }
+      }
+      function render() {
+        const q = $("search").value.trim().toLowerCase();
+        const rows = DATA.filter((u) => !q || (u.displayName + " " + u.email).toLowerCase().includes(q));
+        $("count").textContent = `${rows.length} / ${DATA.length} users`;
+        $("rows").innerHTML = rows.map(rowHtml).join("");
+        document.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", onAct));
+      }
+      function rowHtml(u) {
+        const sub = u.sub
+          ? `<span class="sub ${u.sub.cancelAtPeriodEnd ? "cancel" : ""}">${u.sub.status}${u.sub.currentPeriodEnd ? ` · ${u.sub.cancelAtPeriodEnd ? "ends" : "renews"} ${fmtDate(u.sub.currentPeriodEnd)}` : ""}</span>`
+          : (u.plan === "pro" ? '<span class="sub">comped</span>' : '<span class="sub">—</span>');
+        let acts = u.plan === "pro"
+          ? `<button data-act="plan" data-uid="${u.uid}" data-plan="free">Remove Pro</button>`
+          : `<button class="honey" data-act="plan" data-uid="${u.uid}" data-plan="pro">Make Pro</button>`;
+        if (u.sub && STRIPE) {
+          acts += u.sub.cancelAtPeriodEnd
+            ? `<button data-act="cancel" data-sub="${u.sub.id}" data-cancel="false">Resume</button>`
+            : `<button data-act="cancel" data-sub="${u.sub.id}" data-cancel="true">Cancel</button>`;
+        }
+        return `<tr>
+          <td><div class="who">${u.photoURL ? `<img src="${esc(u.photoURL)}"/>` : `<img/>`}<div><div>${esc(u.displayName)}</div><div class="muted" style="font-size:12px">${esc(u.email)}</div></div></div></td>
+          <td><span class="tag ${u.isPro ? "pro" : ""}">${u.isPro ? "PRO" : "Free"}</span></td>
+          <td>${sub}</td>
+          <td class="muted">${u.usageSends || 0} sends${u.usageDate ? ` (${u.usageDate})` : ""}</td>
+          <td><div class="acts">${acts}</div></td>
+        </tr>`;
+      }
+      async function onAct(e) {
+        const b = e.currentTarget;
+        b.disabled = true;
+        try {
+          if (b.dataset.act === "plan") {
+            await api("/api/plan", "POST", { uid: b.dataset.uid, plan: b.dataset.plan });
+          } else if (b.dataset.act === "cancel") {
+            await api("/api/cancel", "POST", { subId: b.dataset.sub, cancel: b.dataset.cancel === "true" });
+          }
+          await load();
+        } catch (err) { $("msg").textContent = err.message; b.disabled = false; }
+      }
+
+      $("refresh").addEventListener("click", load);
+      $("search").addEventListener("input", render);
+      load();
+    </script>
+  </body>
+</html>

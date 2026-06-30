@@ -225,12 +225,14 @@ document.querySelectorAll(".tab").forEach((btn) => {
 // ---------------- Live tab refresh ----------------
 // Keep the "This tab" / "Tab group" preview in sync with the real browser,
 // even on in-page (SPA) navigations where the page never fully reloads.
+let refreshTimer = null;
 function refreshTabPreview() {
-  if (!state.user) return;
-  if (state.composeType === "tab") {
+  if (!state.user || state.composeType !== "tab") return;
+  clearTimeout(refreshTimer); // coalesce bursts of tab events into one render
+  refreshTimer = setTimeout(() => {
     state.pendingTab = null; // stale right-click/shortcut capture no longer applies
     renderComposeBody();
-  }
+  }, 120);
 }
 chrome.tabs.onActivated.addListener(refreshTabPreview);
 chrome.tabs.onUpdated.addListener((_id, changeInfo, tab) => {
@@ -410,14 +412,26 @@ function waitForTabComplete(tabId) {
   });
 }
 
+let composeRenderSeq = 0;
 async function renderComposeBody() {
+  const seq = ++composeRenderSeq;
   $("typeHint").textContent = TYPE_HINTS[state.composeType] || "";
+
+  // Resolve async data BEFORE touching the DOM so two overlapping calls can't
+  // both append (that caused the duplicated previews/checkboxes).
+  let tab = null;
+  if (state.composeType === "tab") {
+    tab = state.pendingTab || (await getCurrentTab());
+    state.composeTabUrl = tab?.url || tab?.payload?.url || "";
+  } else if (state.composeType === "tabgroup") {
+    if (!state.tabGroupTabs) state.tabGroupTabs = await getCurrentGroupTabs();
+  }
+  if (seq !== composeRenderSeq) return; // a newer render started — abandon this one
+
   const body = $("composeBody");
   body.innerHTML = "";
   if (state.composeType === "tab") {
-    const tab = state.pendingTab || (await getCurrentTab());
     body.appendChild(tabPreview(tab));
-    state.composeTabUrl = tab.url || tab.payload?.url || "";
     const wrap = document.createElement("label");
     wrap.className = "checkrow";
     wrap.innerHTML = `<input type="checkbox" id="includeForm" /> <span>Include what I typed on this page <small class="muted">(forms — never passwords)</small></span>`;
@@ -429,7 +443,6 @@ async function renderComposeBody() {
       wrap.title = "Available when sending the tab you're currently on.";
     }
   } else if (state.composeType === "tabgroup") {
-    if (!state.tabGroupTabs) state.tabGroupTabs = await getCurrentGroupTabs();
     const list = document.createElement("div");
     list.className = "grouptabs";
     const renderList = () => {
