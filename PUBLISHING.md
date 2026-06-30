@@ -9,16 +9,16 @@ Upload `beemo-0.1.0.zip` (manifest.json is at its root — required).
 
 ## ⚠️ Two critical gotchas (do these or sign-in breaks in production)
 
-### 1) Keep the extension ID stable (OAuth depends on it)
-`chrome.identity.getAuthToken` is tied to a specific extension ID, and the Web
-Store assigns a NEW id on publish — which would break Google sign-in.
-Fix after your first upload:
-1. In the Web Store dashboard → your item → **Package** → copy the **public key**.
-2. Add it to `src/manifest.json` as a top-level `"key": "<public key>"`, rebuild.
-   Now the dev (unpacked) id and the published id are the same.
-3. In Google Cloud → **Credentials** → your OAuth client (type Chrome Extension),
-   make sure its **Item ID** matches that id. (It already uses the current dev id
-   `jpampllhblhgjgkikdkjnodiboggdjnl`; if you add the matching `key`, you're set.)
+### 1) Point the OAuth client at the published extension ID
+`chrome.identity.getAuthToken` checks that the calling extension's ID matches the
+OAuth client's registered Item ID. The Web Store assigns a NEW id on publish, so:
+1. Upload the zip (as a draft) → copy the **Item ID** the dashboard shows.
+2. Google Cloud → **Credentials** → your **Chrome Extension** OAuth client → set its
+   **Item ID** to that published id, Save. (The manifest `oauth2.client_id` stays the
+   same — that's all sign-in needs in production.)
+3. *(Optional, for dev parity)* the dashboard's **public key** can be added to
+   `src/manifest.json` as `"key": "<public key>"` so your local unpacked build uses
+   the same id too.
 
 ### 2) Publish the OAuth consent screen
 Google Cloud → **APIs & Services → OAuth consent screen** → **Publish app**
