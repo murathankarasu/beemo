@@ -26,7 +26,7 @@ Like DMs, but for your browser:
 • Anything sent to you appears in your Beemo inbox in real time
 • Open a tab, copy text, or restore a whole group with a tap
 
-Receiving is always free. Pro ($4.99/mo) unlocks unlimited sending and more.
+Completely free — no limits, no subscription.
 
 No more "let me send you that link." Just Beemo it.
 ```
