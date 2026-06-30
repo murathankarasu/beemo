@@ -100,6 +100,13 @@ onAuth(async (user) => {
 
 trySilentSignIn();
 
+// If a right-click/shortcut happens while the panel is already open, pick it up live.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes[PENDING_KEY]?.newValue || !state.user) return;
+  document.querySelector('.tab[data-tab="send"]')?.click();
+  loadPending();
+});
+
 function cleanup() {
   state.unsubs.forEach((u) => u && u());
   state.unsubs = [];

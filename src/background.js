@@ -1,5 +1,5 @@
-// Service worker: kısayol, sağ tık menüsü ve side panel açma.
-// Firebase burada YOK — tüm hesap/Firestore işleri side panel'de (document context).
+// Service worker: keyboard shortcut, right-click menu, and opening the side panel.
+// Firebase lives in the side panel (a document context), not here.
 
 const PENDING_KEY = "beemo_pending";
 
@@ -19,44 +19,42 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Beemo: send this link to a friend",
     contexts: ["link"],
   });
-  // Action ikonuna tıklayınca panel açılsın
+  // Clicking the toolbar icon opens the panel
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 });
 
-async function stashPending(pending) {
-  await chrome.storage.local.set({ [PENDING_KEY]: { ...pending, ts: Date.now() } });
+// IMPORTANT: open the side panel synchronously inside the gesture (no await
+// before it), otherwise Chrome rejects sidePanel.open() as "not a user gesture".
+function openPanel(tab) {
+  if (tab?.id != null) chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
+  else if (tab?.windowId != null) chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
 }
 
-async function openPanel(tabId, windowId) {
-  try {
-    if (tabId != null) await chrome.sidePanel.open({ tabId });
-    else if (windowId != null) await chrome.sidePanel.open({ windowId });
-  } catch (e) {
-    console.warn("Couldn't open the side panel:", e);
-  }
+// Stash what to send; the panel reads it on open (or live via storage.onChanged).
+function stash(pending) {
+  chrome.storage.local.set({ [PENDING_KEY]: { ...pending, ts: Date.now() } });
 }
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  openPanel(tab); // first — keep the gesture
   if (info.menuItemId === "beemo-send-page") {
-    await stashPending({ type: "tab", payload: { url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl } });
+    stash({ type: "tab", payload: { url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl } });
   } else if (info.menuItemId === "beemo-send-selection") {
-    await stashPending({ type: "text", payload: { text: info.selectionText || "" } });
+    stash({ type: "text", payload: { text: info.selectionText || "" } });
   } else if (info.menuItemId === "beemo-send-link") {
-    await stashPending({ type: "tab", payload: { url: info.linkUrl, title: info.linkUrl } });
+    stash({ type: "tab", payload: { url: info.linkUrl, title: info.linkUrl } });
   }
-  await openPanel(tab?.id, tab?.windowId);
 });
 
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener((command, tab) => {
   if (command !== "open-beemo") return;
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  openPanel(tab); // first — keep the gesture
   if (tab) {
-    await stashPending({ type: "tab", payload: { url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl } });
-    await openPanel(tab.id, tab.windowId);
+    stash({ type: "tab", payload: { url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl } });
   }
 });
 
-// Panel "yeni gönderi geldi" derse bildirim göster.
+// Panel asks us to show an OS notification when a friend sends something.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === "beemo-notify") {
     chrome.notifications.create({
