@@ -37,12 +37,18 @@ exports.lemonWebhook = onRequest(
       const status = attr.status; // active | on_trial | paused | past_due | unpaid | cancelled | expired
       const toTs = (s) => (s ? admin.firestore.Timestamp.fromDate(new Date(s)) : null);
 
+      // A cancelled subscription keeps Pro until the paid period ends; only once
+      // it actually expires (or is paused/unpaid) does access drop.
+      const endsMs = attr.ends_at ? new Date(attr.ends_at).getTime() : null;
+      const active =
+        status === "cancelled" ? (endsMs ? endsMs > Date.now() : false) : ACTIVE.has(status);
+
       await admin
         .firestore()
         .doc(`billing/${uid}`)
         .set(
           {
-            active: ACTIVE.has(status),
+            active,
             status: status || null,
             cancelAtPeriodEnd: !!attr.cancelled,
             renewsAt: toTs(attr.renews_at),
