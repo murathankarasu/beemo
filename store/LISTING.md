@@ -33,7 +33,7 @@ No more "let me send you that link." Just Beemo it.
 
 ## Privacy tab
 - **Single purpose**: Beemo lets a signed-in user send the current tab, a tab group, or a text note to a friend who also uses Beemo, directly between Chrome browsers.
-- **Privacy policy URL**: https://beemo-ten.vercel.app/privacy.html  (or https://yourfavbeemo.com/privacy.html once the domain is live)
+- **Privacy policy URL**: https://yourfavbeemo.com/privacy.html
 
 ### Permission justifications
 - **identity**: Sign in with Google to identify the user to their friends; we use only basic profile (name, email, photo).

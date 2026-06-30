@@ -28,7 +28,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://yourfavbeemo.com/*", "https://beemo-ten.vercel.app/*"],
+      "matches": ["https://yourfavbeemo.com/*", "https://www.yourfavbeemo.com/*"],
       "js": ["invite-capture.js"],
       "run_at": "document_idle"
     }

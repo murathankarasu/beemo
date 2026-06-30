@@ -29,7 +29,7 @@ warning. If you leave it in Testing, only your added test users can sign in.
 ## Store submission checklist
 - [ ] Pay the **one-time $5** developer registration fee (first time only).
 - [ ] Create item → upload `beemo-0.1.0.zip`.
-- [ ] **Privacy policy URL**: `https://beemo-ten.vercel.app/privacy.html`
+- [ ] **Privacy policy URL**: `https://yourfavbeemo.com/privacy.html`
       (update the contact email in `docs/privacy.html` to one you actually read).
 - [ ] **Single purpose**: "Send tabs, tab groups, and text to friends, Chrome to Chrome."
 - [ ] **Permission justifications** (paste in the dashboard):
